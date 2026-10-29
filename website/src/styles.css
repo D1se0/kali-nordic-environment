@@ -35,7 +35,9 @@ a { color: var(--frost1); text-decoration: none; }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @keyframes pulse { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes gradShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-@keyframes twinkle { 0%,100% { opacity: .15; } 50% { opacity: .9; } }
+@keyframes twinkle { 0%,100% { opacity: .3; } 50% { opacity: .75; } }
+@keyframes auroraPulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes glowPulse { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
 @keyframes spinSlow { to { transform: rotate(360deg); } }
 @keyframes scrollDot { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
 
@@ -79,14 +81,18 @@ a { color: var(--frost1); text-decoration: none; }
 /* ── HERO ── */
 .hero { position: relative; padding: 150px 0 110px; overflow: hidden; }
 .hero-inner { position: relative; z-index: 2; text-align: center; }
-.aurora { position: absolute; inset: -20% -10%; z-index: 0; opacity: .5; filter: blur(60px); }
-.aurora i { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: pulse 9s ease-in-out infinite; }
+/* Sin mix-blend-mode: screen (recomposición de la escena entera cada frame
+   = parpadeo) y sin blur en el contenedor (obli­gaba a re-rasterizar el blur
+   al animar los hijos). Ahora: blur estático en cada blob y animación
+   SOLO de opacity — el raster queda cacheado en GPU y no parpadea. */
+.aurora { position: absolute; inset: -20% -10%; z-index: 0; opacity: .5; transform: translateZ(0); }
+.aurora i { position: absolute; border-radius: 50%; filter: blur(55px); will-change: opacity; animation: auroraPulse 14s ease-in-out infinite; }
 .aurora i:nth-child(1) { width: 45vw; height: 45vw; left: -8%; top: -12%; background: rgba(94,129,172,.35); }
 .aurora i:nth-child(2) { width: 38vw; height: 38vw; right: -6%; top: -6%; background: rgba(136,192,208,.28); animation-delay: -3s; }
 .aurora i:nth-child(3) { width: 42vw; height: 42vw; left: 24%; bottom: -24%; background: rgba(180,142,173,.22); animation-delay: -5.5s; }
 .aurora i:nth-child(4) { width: 30vw; height: 30vw; right: 22%; bottom: -18%; background: rgba(163,190,140,.16); animation-delay: -7.5s; }
 .stars { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--snow2); animation: twinkle 3.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.09s); left: calc(var(--i) * 37.7 % / 3); top: calc((var(--i) * 53.3) % 100); }
+.stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--snow2); animation: twinkle 6s ease-in-out infinite; animation-delay: calc(var(--i) * -0.2s); will-change: opacity; left: calc(var(--i) * 37.7 % / 3); top: calc((var(--i) * 53.3) % 100); }
 
 .hero-kicker {
   display: inline-flex; align-items: center; gap: 10px;
@@ -99,7 +105,7 @@ a { color: var(--frost1); text-decoration: none; }
   margin: 26px 0 18px; font-size: clamp(40px, 6.4vw, 74px); line-height: 1.04;
   color: var(--snow0); font-weight: 900; letter-spacing: -1.5px;
 }
-.hero-title .grad { animation: gradShift 6s ease infinite; background-size: 220% 100%; }
+.hero-title .grad { animation: gradShift 12s linear infinite; will-change: background-position; background-size: 220% 100%; }
 .hero-sub { max-width: 720px; margin: 0 auto 34px; color: var(--snow1); font-size: 18.5px; line-height: 1.65; opacity: .88; }
 .hero-sub b { color: var(--frost1); }
 .hero-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
@@ -118,13 +124,14 @@ a { color: var(--frost1); text-decoration: none; }
 .hero-shot { position: relative; margin: 58px auto 8px; max-width: 980px; }
 .hero-shot img {
   border-radius: var(--radius); border: 1px solid rgba(136,192,208,.28);
-  animation: scaleIn 1s cubic-bezier(.2,.7,.3,1) both; transition: .4s;
+  width: 100%; aspect-ratio: 16/9; object-fit: cover; /* reserva el hueco: sin salto al cargar */
+  animation: scaleIn 1s cubic-bezier(.2,.7,.3,1) both; transition: transform .4s, border-color .4s;
 }
 .hero-shot:hover img { transform: translateY(-6px); border-color: rgba(136,192,208,.55); }
 .shot-glow {
   position: absolute; inset: 6% 12% -10%; z-index: -1; border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(136,192,208,.35), transparent 65%);
-  filter: blur(46px); animation: pulse 5s ease-in-out infinite;
+  filter: blur(46px); will-change: opacity; animation: glowPulse 8s ease-in-out infinite;
 }
 .shot-shadow {
   position: absolute; inset: 96% 10% 0; z-index: -2;

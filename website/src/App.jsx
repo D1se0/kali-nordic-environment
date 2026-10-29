@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useReveal, useScrollProgress, useTyping } from './hooks.js';
+import { useReveal, useScrollProgressVar, useTyping, useGlobalReveal } from './hooks.js';
 
 const BASE = import.meta.env.BASE_URL; // '/kali-nordic/' en Pages
 const S = (n) => `${BASE}screenshots/${n}`;
@@ -51,7 +51,7 @@ function Hero() {
   return (
     <section id="top" className="hero">
       <div className="aurora" aria-hidden="true"><i/><i/><i/><i/></div>
-      <div className="stars" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} style={{ '--i': i }} />)}</div>
+      <div className="stars" aria-hidden="true">{Array.from({ length: 32 }, (_, i) => <i key={i} style={{ '--i': i }} />)}</div>
       <div className="hero-inner wrap">
         <p className="hero-kicker" data-reveal="true">
           <span className="pill-dot" /> bspwm · polybar · picom · kitty · zsh · rofi
@@ -234,13 +234,13 @@ const LAYERS = [
 
 function Arch() {
   const ref = useReveal();
-  const p = useScrollProgress();
+  const stackRef = useScrollProgressVar();
   return (
     <section id="arch" className="section">
       <div className="wrap" ref={ref}>
         <h2 className="sec-title" data-reveal="true">Arquitectura en <span className="grad">5 capas</span></h2>
         <p className="sec-sub" data-reveal="true">Nada mágico: cada capa es inspeccionable, reproducible y con decisiones documentadas en docs/DECISIONS.md.</p>
-        <div className="stack" data-reveal="true" style={{ '--progress': p }}>
+        <div className="stack" ref={stackRef} data-reveal="true">
           {LAYERS.map((l, i) => (
             <div className={`layer l${i}`} key={l.c}>
               <span className="layer-tag">{String(i + 1).padStart(2, '0')} · {l.c}</span>
@@ -272,6 +272,7 @@ function Footer() {
 }
 
 export default function App() {
+  useGlobalReveal();
   return (
     <div className="page">
       <Nav />
