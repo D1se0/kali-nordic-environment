@@ -9,7 +9,7 @@
 ![license](https://img.shields.io/github/license/D1se0/kali-nordic?color=88C0D0)
 ![pages](https://img.shields.io/badge/docs-GitHub_Pages-B48EAD?logo=github&logoColor=white)
 
-**📖 Documentación extendida:** [https://d1se0.github.io/kali-nordic/](https://d1se0.github.io/kali-nordic/) (desplegada con GitHub Actions)
+**📖 Documentación extendida:** [https://d1se0.github.io/kali-nordic-environment/](https://d1se0.github.io/kali-nordic-environment/) (desplegada con GitHub Actions)
 
 ---
 
@@ -60,14 +60,14 @@
 
 ### Opción recomendada — release compilada
 ```bash
-curl -O https://github.com/D1se0/kali-nordic/releases/latest/download/nordic-env-installer.sh
+curl -O https://github.com/D1se0/kali-nordic-environment/releases/latest/download/nordic-env-installer.sh
 chmod +x nordic-env-installer.sh
 ./nordic-env-installer.sh
 ```
 
 ### Opción manual — clonar y correr
 ```bash
-git clone https://github.com/D1se0/kali-nordic.git
+git clone https://github.com/D1se0/kali-nordic-environment.git
 cd kali-nordic
 chmod +x install.sh && ./install.sh
 ```

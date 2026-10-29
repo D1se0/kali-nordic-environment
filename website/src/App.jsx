@@ -29,7 +29,7 @@ function Nav() {
       </a>
       <nav className={`nav-links ${open ? 'open' : ''}`}>
         {links.map(([h, t]) => <a key={h} href={h} onClick={() => setOpen(false)}>{t}</a>)}
-        <a className="nav-cta" href="https://github.com/D1se0/kali-nordic" target="_blank" rel="noreferrer">
+        <a className="nav-cta" href="https://github.com/D1se0/kali-nordic-environment" target="_blank" rel="noreferrer">
           GitHub ↗
         </a>
       </nav>
@@ -197,7 +197,7 @@ function Install() {
     return () => clearInterval(t);
   }, []);
   const code = [
-    'curl -O https://github.com/D1se0/kali-nordic/releases/latest/download/nordic-env-installer.sh',
+    'curl -O https://github.com/D1se0/kali-nordic-environment/releases/latest/download/nordic-env-installer.sh',
     'chmod +x nordic-env-installer.sh && ./nordic-env-installer.sh',
     '# cierra sesión → elige la sesión "bspwm" en el login Nord',
   ];
@@ -261,8 +261,8 @@ function Footer() {
         <div className="dragon-foot" aria-hidden="true">🐉</div>
         <p><b>kali-nordic</b> — diseñado con la paleta Nord (#2E3440 · #88C0D0 · #A3BE8C · #BF616A)</p>
         <p className="foot-links">
-          <a href="https://github.com/D1se0/kali-nordic">GitHub</a> ·
-          <a href="https://github.com/D1se0/kali-nordic/releases">Releases</a> ·
+          <a href="https://github.com/D1se0/kali-nordic-environment">GitHub</a> ·
+          <a href="https://github.com/D1se0/kali-nordic-environment/releases">Releases</a> ·
           <a href="https://www.nordtheme.com/docs/colors-and-palettes">Nord palette</a>
         </p>
         <p className="foot-copy">Made with ❄ by D1se0 · GPL-3.0</p>

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 // con base conmutable para desarrollo y despliegue.
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VITE_BASE || '/kali-nordic/',
+  base: process.env.VITE_BASE || '/kali-nordic-environment/',
   build: {
     outDir: 'dist',
     assetsInlineLimit: 8192,

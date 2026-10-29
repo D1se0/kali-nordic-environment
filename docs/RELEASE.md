@@ -40,7 +40,7 @@ Ver la galería en la web del proyecto (GitHub Pages) o en `docs/screenshots/` d
 
 ## 🚀 Instalación
 ```bash
-curl -O https://github.com/D1se0/kali-nordic/releases/latest/download/nordic-env-installer.sh
+curl -O https://github.com/D1se0/kali-nordic-environment/releases/latest/download/nordic-env-installer.sh
 chmod +x nordic-env-installer.sh && ./nordic-env-installer.sh
 # cierra sesión y elige la sesión "bspwm" en el login Nord
 ```
