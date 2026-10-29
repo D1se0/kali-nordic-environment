@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# nordic-cheatsheet — chuleta de atajos generada desde el propio sxhkdrc + nano
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+SXHKD="$HOME/.config/sxhkd/sxhkdrc"
+
+parse_hotkeys() {
+    awk '
+      BEGIN { comment=0 }
+      /^[[:space:]]*#/ { next }
+      { if (NF==0) next }
+      { vals=""
+      }
+      /^[[:space:]]+[a-z].*/ { if (k!="") printf "%s  →  %s\n", k, $0; k="" }
+      !/^[[:space:]]/ && NF { k=$0 }
+    ' "$SXHKD" 2>/dev/null
+}
+text=$(parse_hotkeys)
+[ -z "$text" ] && text="(no se pudieron leer atajos)"
+
+printf '%s\n' "$text" \
+  | nordic-rofi cheatsheet -- -dmenu -no-custom -i -p "  atajos kali-nordic"
+
+# extendida: letras nano (vía vereinbarung nano-help)

@@ -1,0 +1,104 @@
+// config.rasi — tema por defecto de rofi (rofi 2.0 solo respeta este fichero
+// en esta VM; los modos particulares van por bin/nordic-rofi con XDG efímero)
+* {
+    background:     #1E222A;
+    background-alt: #2E3440;
+    foreground:     #D8DEE9;
+    selected:       #3B4252;
+    urgent:         #434C5E;
+    accent:         #88C0D0;
+    muted:          #6B7889;
+    crit:           #BF616A;
+
+    font: "JetBrainsMono Nerd Font 10";
+    text-color: @foreground;
+    padding: 0px;
+    border: 0px;
+    border-radius: 10px;
+    margin: 0px;
+    show-icons: true;
+    icon-theme: "Papirus";
+}
+
+element-text, element-icon, textbox, entry {
+    font: @font;
+}
+
+window {
+    location: center;
+    width: 640px;
+    padding: 14px;
+    background-color: @background;
+    border: 1px;
+    border-color: rgba (136, 192, 208, 0.35);
+    border-radius: 10px;
+}
+
+inputbar {
+    background-color: transparent;
+    border: 0px;
+    margin: 0 0 6px 0;
+    padding: 6px 8px;
+    children: [ entry ];
+}
+
+entry {
+    placeholder: "buscar…";
+    placeholder-color: @muted;
+    text-color: @accent;
+    background-color: transparent;
+    border: 0px;
+}
+
+listview {
+    lines: 12;
+    scrollbar: false;
+    spacing: 4px;
+    padding: 4px 0;
+    background-color: transparent;
+    border: 0px;
+    fixed-height: false;
+}
+
+element {
+    background-color: transparent;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 0px;
+}
+element normal normal, element alternate normal {
+    background-color: transparent;
+    text-color: @foreground;
+    border: 0px;
+}
+element normal active, element alternate active {
+    background-color: transparent;
+    text-color: @accent;
+    border: 0px;
+}
+element normal urgent, element alternate urgent {
+    background-color: transparent;
+    text-color: @crit;
+    border: 0px;
+}
+element selected normal {
+    background-color: @selected;
+    text-color: #ECEFF4;
+    border: 0px;
+}
+element selected active {
+    background-color: @selected;
+    text-color: @accent;
+    border: 0px;
+}
+element selected urgent {
+    background-color: @urgent;
+    text-color: #ECEFF4;
+    border: 0px;
+}
+
+element-icon {
+    size: 22px;
+    padding: 0 10px 0 0;
+    background-color: transparent;
+}

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# nordic-rofi — lanza rofi con un tema determinado en esta build (rofi 2.0)
+#   nordic-rofi <tema> -- <args rofi...>     tema = nombre de config/rofi/<tema>.rasi
+# Cómo: rofi 2.0 ignora -theme, -config y XDG_CONFIG_HOME para el tema; SOLO lee
+# ~/.config/rofi/config.rasi. Así que intercambiamos ese fichero durante la
+# ejecución (backup → tema → rofi → restore), con lock para serializar rofi.
+set -u
+: "${DISPLAY:=:0}"; export DISPLAY   # tolera llamadas por SSH (los atajos ya lo heredan)
+T="${1:-}"; shift || true
+[ "${T:-}" = -- ] && { echo "uso: nordic-rofi <tema> -- <args rofi...>" >&2; exit 64; }
+[ -n "$T" ] || T=launcher
+if [ "$1" = -- ]; then shift; fi
+
+THEME_FILE="$HOME/.config/rofi/${T}.rasi"
+CONF="$HOME/.config/rofi/config.rasi"
+[ -r "$THEME_FILE" ] || { echo "nordic-rofi: tema no encontrado: $THEME_FILE" >&2; exit 66; }
+[ -f "$CONF" ] || CONF="$THEME_FILE"
+
+LOCKDIR="${XDG_RUNTIME_DIR:-/tmp}/nordic-rofi.lock"
+mkdir -p "$(dirname "$LOCKDIR")" 2>/dev/null
+exec 9>"$LOCKDIR" || true
+flock 9 2>/dev/null || true
+
+BAK="$CONF.pre"
+cp -f "$CONF" "$BAK" 2>/dev/null || true
+cp -f "$THEME_FILE" "$CONF"
+restore() { mv -f "$BAK" "$CONF" 2>/dev/null; }
+trap restore EXIT
+
+rofi "$@"
+rc=$?
+restore
+trap - EXIT
+exit $rc

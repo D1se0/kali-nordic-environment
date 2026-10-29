@@ -1,0 +1,4 @@
+# ~/.xprofile — se ejecuta al iniciar cualquier sesión X (incluye Xfce)
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+setxkbmap es
+[ -f "$HOME/.config/bspwm/autostart-env.sh" ] && . "$HOME/.config/bspwm/autostart-env.sh"

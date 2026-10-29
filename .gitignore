@@ -1,0 +1,5 @@
+.keys/
+node_modules/
+backups/*.tar.gz*
+backups/vm-full-backup-*
+dist/

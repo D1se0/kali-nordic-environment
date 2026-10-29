@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# nordic-clipmenu — historial del portapapeles vía rofi y tras nuestro nordic-clipboard
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+H="$HOME/.cache/nordic/clipboard-history"
+mkdir -p "$(dirname "$H")"
+[ -f "$H" ] || { notify-send -u low -t 2000 -a "kali-nordic" "  historial vacío" "no hay copias previas"; exit 0; }
+
+sel=$(head -30 "$H" | nordic-rofi clipboard -- -dmenu -i -p "  historial portapapeles") || exit 0
+[ -n "$sel" ] || exit 0
+decode() { base64 --decode 2>/dev/null; }
+if grep -q '^data:' <<< "$sel"; then decode <<< "$sel" | xclip -selection clipboard -t image/png; else
+    printf '%s' "$sel" | xclip -selection clipboard
+fi

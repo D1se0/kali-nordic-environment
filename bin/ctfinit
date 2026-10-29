@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ctfinit — crea el workspace de CTF y (opcional) fija el target
+# Uso: ctfinit <nombre> [IP] [nombre-host]
+set -u
+[ -n "${1:-}" ] || { echo "uso: ctfinit <nombre> [IP] [nombre-host]"; exit 1; }
+name="$1"
+base="$HOME/ctf/$name"
+mkdir -p "$base"/{nmap,web,exploits,loot,notes}
+if [ ! -f "$base/notes/README.md" ]; then
+    printf '# %s — notas de sesión\n\n- \n' "$name" > "$base/notes/README.md"
+fi
+[ -n "${2:-}" ] && settarget "$2" "${3:-$name}"
+echo " ~/ctf/$name listo  ·  notas en notes/README.md"

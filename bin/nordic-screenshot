@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# nordic-screenshot — captura con selección → portapapeles + archivo (+ anotación si viv confl file)
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+SHOTS="$HOME/Imágenes/Nordic-Screenshots"; mkdir -p "$SHOTS"
+ctfdir="$HOME/.cache/nordic/ctf-active-dir"
+F="$SHOTS/nordic-$(date +%Y%m%d-%H%M%S).png"
+
+maim -s "$F" 2>/dev/null || { notify-send -u low -t 1600 -a "kali-nordic" "  captura cancelada" "sin área seleccionada"; exit 1; }
+xclip -selection clipboard -t image/png -i "$F"
+[ -d "$ctfdir" ] && cp -f "$F" "$ctfdir/shots/" 2>/dev/null
+notify-send -u low -t 1600 -a "kali-nordic" "  Captura lista" "$(basename "$F")" 2>/dev/null
+echo "$F"

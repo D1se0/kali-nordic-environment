@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# nordic-toolsmenu — 'Herramientas de hacking' por categorías (rofi → kitty)
+set -u
+
+list_tools() {
+    local title='  recon'
+    printf '  recon\n'
+    for t in nmap amass whois dnsrecon theharvester; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+    printf '\n  web\n'
+    for t in gobuster ffuf dirsearch nikto wfuzz wpscan; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+    printf '\n  explotación\n'
+    for t in hydra msfconsole searchsploit sqlmap; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+    printf '\n  post\n'
+    for t in chisel socat evil-winrm impacket-smbclient; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+    printf '\n  forense\n'
+    for t in binwalk volatility3 autopsy; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+    printf '\n  wireless\n'
+    for t in aircrack-ng airodump-ng wifite; do command -v "$t" >/dev/null 2>&1 && printf '      %s\n' "$t"; done
+}
+
+sel=$(list_tools | nordic-rofi tools -- -dmenu -i -p "  hacking tools") || exit 0
+tool=$(printf '%s' "$sel" | awk '{print $NF}')
+case "$tool" in
+    recon|web|explotación|post|forense|wireless) exit 0 ;;
+    "") exit 0 ;;
+esac
+if command -v "$tool" >/dev/null 2>&1; then
+    setsid kitty --title "$tool" "$tool" >/dev/null 2>&1 &
+else
+    notify-send -u low -t 1800 -a "kali-nordic" "  no disponible" "$tool no está instalado" 2>/dev/null
+fi

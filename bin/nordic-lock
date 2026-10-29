@@ -1,0 +1,56 @@
+#!/bin/bash
+# nordic-lock — pantalla de bloqueo Nord (glass + Frost)
+# Genera la imagen de lock (wallpaper activo difuminado + capa Nord oscuro) y
+# bloquea con i3lock. También se engancha a suspend vía systemd (unit que
+# instala install.sh en /etc/systemd/system/nordic-lock-before-sleep.service).
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+CACHE="$HOME/.cache/nordic"; mkdir -p "$CACHE"
+IMG="$CACHE/nordic-lock-bg.png"
+W=$(xrandr 2>/dev/null | awk '/ connected/{split($3,a,"+"); print a[1]}' | head -1)
+H=$(xrandr 2>/dev/null | awk '/ connected/{split($3,a,"+"); print a[1]}' | head -1 | cut -dx -f2)
+[ -n "$W" ] && [ -n "$H" ] || { W="${NORDIC_RES_W:-1920}"; H="${NORDIC_RES_H:-1080}"; }
+
+MODE="${1:-lock}"
+if [ "${NORDIC_LOCK_TEST:-0}" = "1" ] || [ "$MODE" = "gen" ]; then
+    # modo test/gen: solo prepara la imagen, no bloquea el teclado
+    echo "nordic-lock: gen — imagen de lock en $IMG"
+    MODE=gen
+fi
+
+CONV="$(command -v magick || command -v convert)"
+# generación de la imagen (detecta si ya hay que regenerarla o si MODE=gen)
+REGEN=0
+[ ! -f "$IMG" ] && REGEN=1
+[ "$MODE" = "gen" ] && REGEN=1
+if [ -x "${CONV:-}" ] && [ "$REGEN" = "1" ]; then
+    WP="$(grep -m1 '^wallpaper=' "$CACHE/wallpaper-current.txt" 2>/dev/null | cut -d= -f2)"
+    [ -f "$WP" ] || WP="$CACHE/nordic-wallpapers/nordic-01.png"
+    if [ -f "$WP" ]; then
+        "$CONV" "$WP" -resize "${W}x${H}^" -gravity center -extent "${W}x${H}" \
+            -blur 0x16 -modulate 100,90 -brightness-contrast -18x-15 \
+            -fill '#2E3440B3' -draw "rectangle 0,0,$W,$H" "$IMG" 2>/dev/null \
+        || { "$CONV" "$WP" -resize "${W}x${H}^" -gravity center -extent "${W}x${H}" \
+            -blur 0x16 -fill '#2E3440B3' -draw "rectangle 0,0,$W,$H" "$IMG" 2>/dev/null; }
+    else
+        "$CONV" -size "${W}x${H}" xc:'#2E3440' \
+            -fill '#3B4252' -draw "circle $((W/2)),$((H/2)) 240" \
+            -fill '#88C0D0' -pointsize 40 -gravity center \
+            -annotate 0 'kali-nordic  ·  bloqueado' "$IMG" 2>/dev/null
+    fi
+fi
+
+if [ "$MODE" = "gen" ]; then
+    exit 0
+fi
+
+# i3lock con colores Nord siempre (imagen + anillo Frost si la build lo soporta)
+i3lock -n -i "$IMG" -c 2e3440 \
+    --inside-color=2e3440 --insidever-color=88c0d0 --insidewrong-color=bf616a \
+    --ring-color=81a1c1 --ringver-color=a3be8c --ringwrong-color=bf616a \
+    --line-color=2e3440 --separator-color=434c5e --keyhl-color=ebcb8b \
+    --bshl-color=434c5e 2>/dev/null \
+  || i3lock -n -i "$IMG" 2>/dev/null \
+  || i3lock -n -c 2e3440
+exit 0

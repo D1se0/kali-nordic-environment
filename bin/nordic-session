@@ -1,0 +1,3 @@
+#!/bin/sh
+# nordic-session — punto de entrada de la sesión 'bspwm' en LightDM.
+exec bspwm

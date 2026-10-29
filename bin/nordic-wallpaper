@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# nordic-wallpaper — 5 fondos nórdicos generados proceduralmente (ImageMagick)
+# Degradados Polar Night/Frost, aurora sutil, montañas, luna Frost y pinos.
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+CACHE="$HOME/.cache/nordic"
+WDIR="$CACHE/nordic-wallpapers"
+STATE="$CACHE/wallpaper-current.txt"
+mkdir -p "$WDIR"
+MAGICK="$(command -v magick 2>/dev/null || command -v convert 2>/dev/null)"
+
+if [ -z "$MAGICK" ]; then
+    echo "nordic-wallpaper: ImageMagick no disponible" >&2
+    exit 1
+fi
+
+W="${NORDIC_RES_W:-1920}"
+H="${NORDIC_RES_H:-1080}"
+
+# estilo: cada generador recibe el fichero de salida como $1
+gen_1() { # aurora sutil: degradado polar + banda Frost translúcida superior
+    local out="$1"
+    "$MAGICK" -size "${W}x${H}" gradient:'#2E3440-#3B4252' "$out"
+    "$MAGICK" -size "${W}x$((H / 3))" gradient:'rgba(136,192,208,0.30)-rgba(136,192,208,0.02)' \
+        -blur 0x12 "$WDIR/.aurora.png"
+    "$MAGICK" "$out" "$WDIR/.aurora.png" -geometry +0+0 -compose screen -composite "$out.tmp"
+    mv -f "$out.tmp" "$out"
+}
+gen_2() { # montañas minimalistas (dos capas de silueta)
+    local out="$1" m1=$((H * 70 / 100)) m2=$((H * 82 / 100)) mid=$((W / 2))
+    "$MAGICK" -size "${W}x${H}" gradient:'#434C5E-#2E3440' "$out"
+    "$MAGICK" "$out" -fill '#3B4252' \
+        -draw "polygon 0,$H 0,$m1 $mid,${m2} $W,${m1} $W,$H" "$out.tmp"
+    mv -f "$out.tmp" "$out"
+    "$MAGICK" "$out" -fill '#2E3440' \
+        -draw "polygon 0,$H 0,$m2 $mid,$H $W,${m2} $W,$H" "$out.tmp"
+    mv -f "$out.tmp" "$out"
+}
+gen_3() { # luna Frost con halo sobre polar night
+    local out="$1" cx=$((W * 72 / 100)) cy=$((H * 22 / 100)) r=$((H / 8))
+    "$MAGICK" -size "${W}x${H}" gradient:'#3B4252-#2E3440' "$out.tmp"
+    "$MAGICK" "$out.tmp" -fill '#88C0D0' \
+        -draw "circle ${cx},${cy} $((cx + r)),${cy}" "$out.tmp2"
+    mv -f "$out.tmp2" "$out.tmp"
+    "$MAGICK" "$out.tmp" -fill 'rgba(136,192,208,0.25)' -blur 0x14 \
+        -draw "circle ${cx},${cy} $((cx + r + 60)),${cy}" "$out.tmp2"
+    mv -f "$out.tmp2" "$out.tmp"
+    mv -f "$out.tmp" "$out"
+}
+gen_4() { # degradado Snow Storm flotante sobre polar night
+    local out="$1" gy=$((H / 3))
+    "$MAGICK" -size "${W}x${H}" xc:'#2E3440' "$out"
+    "$MAGICK" -size "${W}x$((H / 2))" gradient:'rgba(216,222,233,0.18)-rgba(216,222,233,0.0)' \
+        "$WDIR/.mist.png"
+    "$MAGICK" "$out" "$WDIR/.mist.png" -geometry "+0+${gy}" -compose screen -composite "$out.tmp"
+    mv -f "$out.tmp" "$out"
+}
+gen_5() { # silueta de pinos sobre degradado Frost
+    local out="$1" x=0 w=140 step=180 h=$((H / 2))
+    "$MAGICK" -size "${W}x${H}" gradient:'#5E81AC-#2E3440' "$out"
+    "$MAGICK" "$out" -fill '#2E3440' \
+        -draw "rectangle 0,${H} ${W},${H}" "$out.tmp"
+    mv -f "$out.tmp" "$out"
+    "$MAGICK" "$out" -fill '#2E3440' \
+        -draw "polygon 0,$H $w,${H} $((w / 2)),$((H - h))" "$out.tmp"
+    mv -f "$out.tmp" "$out"
+}
+
+gen_all() {
+    local i=1 out
+    while [ "$i" -le 5 ]; do
+        out="$WDIR/nordic-0${i}.png"
+        [ -f "$out" ] || gen_"$i" "$out" || echo "fallo en variante $i" >&2
+        i=$((i + 1))
+    done
+    rm -f "$WDIR"/.aurora.png "$WDIR"/.mist.png
+    ls -1 "$WDIR"/nordic-0*.png 2>/dev/null
+}
+
+next() {
+    local files=() f cur nextF i j
+    for f in "$WDIR"/nordic-0*.png; do [ -f "$f" ] && files+=("$f"); done
+    if [ ${#files[@]} -eq 0 ]; then
+        gen_all >/dev/null
+        for f in "$WDIR"/nordic-0*.png; do [ -f "$f" ] && files+=("$f"); done
+    fi
+    [ ${#files[@]} -gt 0 ] || { echo 'sin wallpapers generados' >&2; return 1; }
+    cur=$(head -1 "$STATE" 2>/dev/null)
+    i=0
+    for j in "${!files[@]}"; do
+        [ "${files[$j]}" = "$cur" ] && i=$j
+    done
+    i=$(( (i + 1) % ${#files[@]} ))
+    nextF="${files[$i]}"
+    [ -f "${nextF:-}" ] || nextF="${files[0]}"
+    feh --no-fehbg --bg-scale "$nextF" 2>/dev/null
+    echo "$nextF" > "$STATE"
+    echo "next → $nextF"
+}
+restore() {
+    local f
+    f=$(head -1 "$STATE" 2>/dev/null)
+    [ -f "$f" ] || f="$WDIR/nordic-01.png"
+    [ -f "$f" ] || { next; return; }
+    feh --no-fehbg --bg-scale "$f" 2>/dev/null
+    echo "restore → $f"
+}
+
+# set <fichero> — fija un PNG personalizado conservando su basename
+set_wall() {
+    local src="$1"
+    [ -r "$src" ] || { echo "nordic-wallpaper: no existe $src" >&2; return 1; }
+    [ "$(command -v feh)" ] || { echo "nordic-wallpaper: feh no disponible" >&2; return 1; }
+    local dst="$WDIR/$(basename "$src")"
+    cp -f "$src" "$dst"
+    feh --no-fehbg --bg-scale "$dst" 2>/dev/null
+    echo "$dst" > "$STATE"
+    echo "set → $dst"
+}
+
+case "${1:-restore}" in
+    next|n)       next ;;
+    restore|r)    restore ;;
+    generate|gen) gen_all ;;
+    list)         ls -1 "$WDIR"/nordic-0*.png 2>/dev/null ;;
+    set)          set_wall "$2" ;;
+    *)            echo "uso: nordic-wallpaper [next|restore|generate|list|set <fichero>]" ;;
+esac

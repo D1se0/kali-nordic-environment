@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# nordic-netmenu — resumen de red (interfaces, rutas, DNS, VPN, puertos en escucha)
+set -u
+out="
+INTERFACES
+---------
+$(ip -brief addr 2>/dev/null || echo 'n/a')
+
+RUTAS
+----
+$(ip route 2>/dev/null | head -6)
+
+DNS
+---
+$(awk '$1=="nameserver"{print $2}' /etc/resolv.conf 2>/dev/null | head -4)
+
+VPN
+---
+$(ip -o link 2>/dev/null | awk -F': ' '{print $2}' | grep -E '^(tun|wg|tailscale|ppp)' || echo 'sin interfaz VPN')
+
+PUERTOS EN ESCUCHA
+-----------------
+$(ss -tlpn 2>/dev/null | awk 'NR>1{print $4}' | sort -u | head -15)
+"
+printf '%s\n' "$out" | nordic-rofi cheatsheet -- -dmenu -no-custom -i -p "  resumen de red"

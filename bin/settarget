@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# settarget — fija el objetivo de la máquina (CTF/pentest) para la barra + shells
+# Estado compartido usuario/root con escritura atómica (decisión: /run/nordic si es
+# posible, con fallback al $HOME real; ver docs/DECISIONS.md D-01).
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+PROG="settarget"
+RED='%{F#BF616A}' ; FROST='%{F#88C0D0}' ; MUTED='%{F#4C566A}' ; RESET='%{F-}'
+
+# ── Ruta de estado compartida (root y usuario ven el MISMO fichero) ──────────
+resolve_state_dir() {
+    local ruser='' rhome=''
+    if [ "$(id -u)" -eq 0 ]; then
+        ruser="${SUDO_USER:-kali}"
+        rhome="$(getent passwd "$ruser" 2>/dev/null | cut -d: -f6)"
+        rhome="${rhome:-/home/$ruser}"
+    else
+        rhome="$HOME"
+    fi
+    if [ -w /run/nordic ] 2>/dev/null; then
+        echo /run/nordic ; return 0
+    elif [ "$(id -u)" -eq 0 ] && mkdir -p /run/nordic 2>/dev/null && chmod 1777 /run/nordic; then
+        echo /run/nordic ; return 0
+    fi
+    echo "$rhome/.cache/nordic"
+}
+STATE_DIR="$(resolve_state_dir)"
+STATE_FILE="$STATE_DIR/target"
+mkdir -p "$STATE_DIR" 2>/dev/null
+
+# ── Helpers ─────────────────────────────────────────────────────────────────
+bar_hook() { # notifica a polybar al instante (ipc-hook)
+    command -v polybar-msg >/dev/null 2>&1 || return 0
+    if [ -s "$STATE_FILE" ] 2>/dev/null; then
+        polybar-msg hook target 2 >/dev/null 2>&1
+    else
+        polybar-msg hook target 1 >/dev/null 2>&1
+    fi
+}
+    notify() {
+    # $1=urgencia sin uso directo, $2=título, $3=cuerpo
+    local icon
+    case "${2:-}" in
+        "Target fijado") icon='/usr/share/icons/Papirus/24x24/apps/utilities-network-connection.png' ;;
+        *)               icon='' ;;
+    esac
+    notify-send -u normal -a "kali-nordic" -i "$icon" "${2:-}" "${3:-}" 2>/dev/null &
+}
+
+es_valid() { # IPv4 estricta
+    [ -n "$1" ] || return 1
+    echo "$1" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || return 1
+    IFS='.' read -r a b c d <<< "$1"
+    for o in "$a" "$b" "$c" "$d"; do
+        [ "$o" -le 255 ] 2>/dev/null || return 1
+        [[ "$o" =~ ^([0-9])+$ ]] || return 1
+    done
+    return 0
+}
+es6_valid() { # IPv6 (buen cheque con ip address)
+    ip_address=''; ip -6 2>/dev/null | grep -q . || true
+    echo "$1" | grep -qE '^(([0-9A-Fa-f]{1,4}:){1,7}(:|[0-9A-Fa-f]{1,4})(::)?|::1|::)$' || return 1
+    # más estricto: python hace el trabajo final
+    python3 -c "import ipaddress,sys; ipaddress.IPv6Address(sys.argv[1])" "$1" 2>/dev/null \
+        || python3 -c "import ipaddress,sys; ipaddress.IPv4Address(sys.argv[1])" "$1" 2>/dev/null || return 1
+    return 0
+}
+is_valid_target() { es_valid "$1" && return 0; python3 -c "import ipaddress,sys; ipaddress.ip_address(sys.argv[1])" "$1" 2>/dev/null && return 0; return 1; }
+is_valid_name() { # hostname RFC 1123
+    echo "$1" | grep -qE '^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])\.)*([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])$'
+}
+c() { :; } # marcado de color en CLI lo manejan glifos/estilo coherente
+
+message() { # dirección con estilo Nord
+    case "$1" in
+        ok)    printf '   %s\n' "$2" ;;
+        err)   printf '   %s\n' "$2" ;;
+        info)  printf '   %s\n' "$2" ;;
+    esac
+}
+
+# ── Escritura atómica ───────────────────────────────────────────────────────
+write_state() { # $1=ip  $2=nombre ('' si no)
+    local tmp="$STATE_FILE.tmp.$$"
+    printf '%s|%s' "$1" "$2" > "$tmp" && chmod 644 "$tmp" && mv -f "$tmp" "$STATE_FILE"
+}
+
+# ── Acciones ────────────────────────────────────────────────────────────────
+do_clear() {
+    rm -f "$STATE_FILE"
+    bar_hook
+    printf '%s\n' "No Target"
+    notify "low" "Objetivo limpiado" "No Target" 2>/dev/null
+    exit 0
+}
+do_show() {
+    if [ -s "$STATE_FILE" ]; then
+        read -r line < "$STATE_FILE"
+        ip=${line%%|*}; name=${line#*|}; [ "$name" = "$line" ] && name=""
+        if [ -n "$name" ]; then printf '   %s  ( %s )\n' "$ip" "$name"
+        else printf '   %s\n' "$ip"; fi
+    else
+        printf '%s\n' "No Target"
+    fi
+    exit 0
+}
+do_set() { # $1=ip $2=nombre opcional
+    local ip="$1" name="${2:-}"
+    if ! is_valid_target "$ip"; then
+        printf '%s\n' "   IP/target no válido: '$ip'"
+        exit 1
+    fi
+    if [ -n "$name" ] && ! is_valid_name "$name"; then
+        printf '%s\n' "   Nombre no válido: '$name'"
+        exit 1
+    fi
+    write_state "$ip" "$name"
+    bar_hook
+    if [ -n "$name" ]; then printf '%s\n' "   $ip  $name"
+    else printf '%s\n' "   $ip"; fi
+    # notificación dunst discreta
+    notify low "Target fijado" "$ip${name:+  $name}"
+}
+do_copy() {
+    if [ -s "$STATE_FILE" ]; then
+        read -r line < "$STATE_FILE"; ip=${line%%|*}
+        printf '%s' "$ip" | xclip -selection clipboard
+        printf '%s\n' "   '$ip' copiado al portapapeles"
+        notify low "Target copiado" "$ip"
+    else
+        printf '%s\n' "   (sin target que copiar)"
+    fi
+}
+do_hosts() {
+    local ip="$1" name="$2"
+    [ -n "$ip" ] || { printf '%s\n' "   --hosts requiere IP"; exit 1; }
+    name="${name:-target}"
+    sudo -n true 2>/dev/null || { printf '%s\n' "   sudo no disponible — no aplicado"; exit 1; }
+    sudo -n sed -i "/[[:space:]]$name\$/d" /etc/hosts 2>/dev/null
+    echo "# kali-nordic settarget → $ip $name" | sudo -n tee -a /etc/hosts >/dev/null
+    echo "$ip $name" | sudo -n tee -a /etc/hosts >/dev/null
+    printf '%s\n' "   /etc/hosts: $name → $ip"
+}
+do_ask() {
+    local sel
+    sel=$(nordic-rofi target -- -dmenu -i -p "  Fijar target (IP [nombre])") || return 0
+    sel=$(printf '%s' "$sel" | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')
+    local ip name
+    ip=$(printf '%s\n' "$sel" | awk '{print $1}')
+    name=$(printf '%s\n' "$sel" | awk '{print $2}')
+    if [ -z "$ip" ]; then
+        do_clear
+        return 0
+    fi
+    do_set "$ip" "$name"
+}
+usage() {
+cat <<'EOF'
+   settarget — fijar objetivo de la máquina actual (CTF/pentest)
+
+  USO   settarget <IP>              fija el target (valida IPv4/IPv6)
+	settarget <IP> <nombre>     fijar con nombre (se muestra en la barra)
+	settarget                   limpia el target (barra: 'No target')
+	settarget -c | --clear      limpia
+	settarget -s | --show       muestra el target actual
+	settarget --copy            copia el target al portapapeles
+	settarget --ask             preguntar por rofi (atajo Super+T)
+	settarget --hosts <IP> [nombre]   añade a /etc/hosts con sudo
+	settarget -h | --help       esta ayuda
+
+  VARIABLES en nuevas shells (zsh):
+	$TARGET        la IP fijada (vía precmd, coste ~0 ms)
+	$TARGET_NAME   el nombre si lo hay
+
+  ejemplos:
+	settarget 10.10.11.25 forge.htb
+	settarget
+	nmap $TARGET
+EOF
+}
+
+# ── main ────────────────────────────────────────────────────────────────────
+case "${1:-}" in
+    -c|--clear)  do_clear ;;
+    -s|--show)   do_show ;;
+    -h|--help)   usage ;;
+    --copy)      do_copy ;;
+    --ask)       do_ask ;;
+    --hosts)     shift; do_hosts "$@" ;;
+    "")          do_clear ;;
+    -*)          printf '%s\n' "   opción desconocida: $1 — vea: settarget --help"; exit 1 ;;
+    *)           do_set "$1" "${2:-}" ;;
+esac

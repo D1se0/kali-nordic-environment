@@ -1,0 +1,98 @@
+// clipboard.rasi — Nord glass (autocontenido)
+* {
+    background:     #2E3440;      /* Polar Night 0 · glass */
+    background-alt: #3B4252;      /* píldoras */
+    foreground:     #D8DEE9;
+    selected:       #4C566A;
+    urgent:         #434C5E;
+    accent:         #88C0D0;
+    accent2:        #81A1C1;
+    muted:          #4C566A;
+    ok:             #A3BE8C;
+    crit:           #BF616A;
+
+    font: "JetBrainsMono Nerd Font 10";
+    text-color: @foreground;
+    padding: 0px;
+    border: 0px;
+    border-radius: 12px;
+    border-color: @accent2;
+    margin: 0;
+}
+
+element-text, element-icon, textbox, entry {
+    font: @font;
+}
+
+window {
+    location: center;
+    width: 620px;
+    padding: 12px;
+    background-color: @background;
+    border: 2px;
+    border-color: rgba (94, 129, 172, 0.55);
+    border-radius: 12px;
+}
+
+inputbar {
+    background-color: @background-alt;
+    border-radius: 9px;
+    margin: 0 0 8px 0;
+    padding: 10px;
+    children: [icon, entry];
+}
+icon {
+    size: 18px;
+    filename: "applications-system";
+    padding: 0 8px 0 0;
+}
+
+listview {
+    lines: 10;
+    scrollbar: false;
+    spacing: 2px;
+    padding: 2px 0;
+    background-color: transparent;
+    border-radius: 9px;
+}
+
+element {
+    background-color: transparent;
+    padding: 7px 10px;
+    border-radius: 9px;
+}
+/* estados completos: si falta alguno, rofi 2.0 pinta beige por defecto */
+element normal normal, element alternate normal {
+    background-color: transparent;
+    text-color: @foreground;
+}
+element normal active, element alternate active {
+    background-color: transparent;
+    text-color: @accent;
+}
+element normal urgent, element alternate urgent {
+    background-color: transparent;
+    text-color: @crit;
+}
+element selected normal {
+    background-color: @selected;
+    text-color: #ECEFF4;
+}
+element selected active {
+    background-color: @selected;
+    text-color: @accent;
+}
+element selected urgent {
+    background-color: @urgent;
+    text-color: #2E3440;
+}
+
+entry {
+    border: none;
+    background-color: transparent;
+    placeholder: "";
+    placeholder-color: @muted;
+}
+
+window { width: 600px; }
+listview { lines: 10; }

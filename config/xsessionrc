@@ -1,0 +1,3 @@
+# ~/.xsessionrc — idéntico a .xprofile pero para lightdm-xsession
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+setxkbmap es

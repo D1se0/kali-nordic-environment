@@ -1,0 +1,47 @@
+[global]
+    origin = top-right
+    monitor = 0
+    follow = mouse
+    alignment = right
+
+    width = 380
+    height = 140
+    offset = 12x12
+    scale = 0
+    notification_limit = 4
+    gap_size = 4
+
+    font = JetBrainsMono Nerd Font 10
+    sort = yes
+    indicate_hidden = yes
+    text_icon_padding = 8
+
+    frame_width = 2
+    frame_color = "#5E81AC"
+
+    corner_radius = 10
+    timeout = 6
+    default_icon = dialog-information
+    always_run_script = true
+
+[urgency_low]
+    background = "#3B4252"
+    foreground = "#D8DEE9"
+    frame_color = "#81A1C1"
+    timeout = 6
+    icon = dialog-information
+
+[urgency_normal]
+    background = "#3B4252"
+    foreground = "#ECEFF4"
+    frame_color = "#88C0D0"
+    timeout = 8
+
+[urgency_critical]
+    background = "#4C566A"
+    foreground = "#ECEFF4"
+    frame_color = "#BF616A"
+    timeout = 0
+    icon = dialog-warning
+
+# Atajo botanical: Ctrl+Alt+d → cerrar todas (dunstctl)

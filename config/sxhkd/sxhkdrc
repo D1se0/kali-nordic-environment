@@ -1,0 +1,97 @@
+# sxhkdrc — kali-nordic (Super = Mod4). Genera la chuleta de atajos: Super+F1.
+#
+# Sistema / sesión (NUNCA destructivo sin confirmar)
+super + Escape
+    nordic-power menu
+super + shift + r
+    nordic-reload
+super + shift + l
+    nordic-lock
+
+# Terminal
+super + Return
+    kitty
+
+# Scratchpad drop-down
+super + BackSpace
+    nordic-scratchpad
+
+# Cerrar ventana (con confirmación Yes/No)
+super + w
+    nordic-confirm close
+
+# Lanzador
+super + space
+    rofi -show drun
+
+# Escritorios (activar con Super+N, 0 = décimo)
+super + {1-9,0}
+    bspc desktop -f '^{1-9,10}'
+super + shift + {1-9,0}
+    bspc node -d '^{1-9,10}'
+
+# Foco (hjkl + flechas)
+super + {h,j,k,l}
+    bspc node -f @{west,south,north,east}
+super + {Left,Down,Up,Right}
+    bspc node -f @{west,south,north,east}
+
+# Mover/intercambiar
+super + shift + {h,j,k,l}
+    bspc node -s @{west,south,north,east}
+super + shift + {Left,Down,Up,Right}
+    bspc node -s @{west,south,north,east}
+
+# Redimensionar
+super + ctrl + {h,j,k,l}
+    bspc node -z @{left,-25} {@bottom,-25} {@top,-25} {@right,-25} 2>/dev/null
+super + ctrl + {Left,Down,Up,Right}
+    bspc node -z @{right,25} {@top,25} {@bottom,25} {@left,25} 2>/dev/null
+
+# Monocle / fullscreen / flotar
+super + m
+    bspc desktop -l next
+super + f
+    bspc node -t fullscreen
+super + shift + space
+    bspc node -t "~floating"
+
+# Presets de disposición
+super + alt + space
+    nordic-layout-cycle
+
+# Equilibrar árbol
+super + b
+    bspc desktop focused --balance
+
+# Captura de pantalla
+super + shift + s
+    nordic-screenshot
+
+# Historial de portapapeles
+super + v
+    nordic-clipmenu
+
+# Fijar target rápido
+super + t
+    settarget --ask
+
+# Auto-escribir IP en el cursor (F1 = propia, VPN priorizada · F2 = víctima)
+F1
+    nordic-typeip local
+F2
+    nordic-typeip target
+
+# Chuleta de atajos + nano + herramientas
+super + F1
+    nordic-cheatsheet
+super + shift + F2
+    nordic-toolsmenu
+
+# Perfil blur ON/OFF
+super + ctrl + b
+    nordic-blur-toggle
+
+# Siguiente wallpaper
+super + shift + f
+    nordic-wallpaper next

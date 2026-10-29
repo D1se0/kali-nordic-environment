@@ -1,0 +1,358 @@
+## nordic.nanorc — kali-nordic — "VS Code Dark+ sobre Nord" (nano 9.x)
+## ÚNICO origen de sintaxis: /etc/nanorc no debe incluir /usr/share/nano/*.nanorc
+## ni incluir este fichero dos veces (duplicados = banner "Mistakes").
+##
+## Paleta (kitty.conf Nord): keywords/#81A1C1 · strings/#A3BE8C · builtins/#EBCB8B ·
+## tipos/#8FBCBB · vars/#88C0D0 · consts/#B48EAD · números/#8FBCBB ·
+## comentarios/#434C5E (sutil) · shebang/#8FBCBB · TODO/#EBCB8B+rojo.
+## En nano, la última regla que casa pinta encima: keywords → strings → comments.
+
+## ─── colores reutilizables NO existen; se repiten nombres válidos ─────────────
+## Regla común final (colócala al final de CADA bloque): TODO/FIXME
+
+## ─── 1. shell (sh / bash / zsh / dash / ksh / ash) ────────────────────────────
+syntax "sh" "\.(sh|bash|zsh|ksh|ash)$" "\.bashrc$" "^\.profile$"
+header "^#!.*([a-z/]*env[[:space:]]+)?(ba|z|k|da|a)?sh([[:space:]]|$)"
+color brightblue "\<(if|then|elif|else|fi|for|while|until|do|done|case|esac|in|function|return|break|continue|exit|select|time|coproc)\>"
+color brightblue "\<(local|export|readonly|declare|typeset|unset|shift|source|alias|eval|exec|trap|set|getopts|hash|bind|builtin|wait|jobs|suspend)\>"
+color yellow "\<(sudo|nmap|curl|wget|nc|ncat|socat|python3?|perl|php|ruby|node|jq|awk|sed|grep|egrep|find|xargs|tee|cut|sort|uniq|head|tail|tr|tar|gzip|gunzip|ssh|scp|rsync|gobuster|ffuf|hydra|msfconsole|nikto|nuclei)\>"
+color cyan "\$\{?[[:alnum:]_@?#\*]+\}?"
+color cyan "\$\{[^}]*\}"
+color brightgreen "\<[0-9]+\>"
+color brightgreen "0x[[:xdigit:]]+"
+color brightgreen "\$[0-9]+" "\"[^\"]*\"" "'[^']*'" "`[^`]*`"
+color brightcyan "^#![[:space:]]*/[^[:space:]]*"
+color brightblack "#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX|HACK)\>"
+color red "\<(FATAL|ERROR)\>" "\<(rm[[:space:]]+-rf)\>"
+color magenta "(\<https?://|ftp://)[^[:space:]]+"
+
+## ─── 2. python (extensión y shebang) ─────────────────────────────────────────
+syntax "python" "\.(py|pyw)$"
+header "^#!.*((env[[:space:]]+)?|/usr/bin/)python[23]?([[:space:]]|$)"
+color brightblue "\<(and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\>"
+color cyan "\<(True|False|None|self|cls)\>"
+color yellow "\<(print|len|range|int|float|str|list|dict|set|tuple|open|map|filter|sorted|type|abs|sum|min|max|round|zip|enumerate|isinstance|super|getattr|setattr|hasattr|repr|input|format|hex|bin|oct|ord|chr|id|hash|vars|dir|exec|eval)\>"
+color brightcyan "\<(log|logging|socket|sys|os|re|json|time|datetime|subprocess|threading|argparse|requests|base64|hashlib)\.[[:alnum:]_]+"
+color magenta "@[a-zA-Z_][a-zA-Z0-9_.]*"
+color brightgreen "\<[0-9]+(\.[0-9]+)?[jJ]?\>|0[xX][[:xdigit:]]+|0[bB][01]+\>"
+color brightgreen "\"[^\"]*\"" "'[^']*'" "\"\"\".*?\"\"\""
+color brightcyan "^#![[:space:]]*/[^[:space:]]*"
+color brightblack "#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+color red "\<(FATAL|ERROR)\>"
+linter python3 -m py_compile
+
+## ─── 3. perl ─────────────────────────────────────────────────────────────────
+syntax "perl" "\.(pl|pm|t)$"
+header "^#!.*((env[[:space:]]+)?|/usr/bin/)perl([[:space:]]|$)"
+color brightblue "\<(if|elsif|else|unless|while|until|for|foreach|do|last|next|redo|sub|use|no|require|package|return|die|warn|print|printf|sprintf|local|my|our|our\(|state)\>"
+color cyan "\\\$[[:alnum:]_]+|@[[:alnum:]_]+|%[[:alnum:]_]+"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightcyan "^#![[:space:]]*/[^[:space:]]*"
+color brightblack "#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 4. php ──────────────────────────────────────────────────────────────────
+syntax "php" "\.php[0-9]?$"
+header "^#!.*(php)([[:space:]]|$)"
+color brightblue "\<(if|else|elseif|endif|for|foreach|endfor|while|endwhile|do|switch|case|default|endswitch|function|return|break|continue|class|interface|trait|extends|implements|public|private|protected|static|abstract|final|new|try|catch|finally|throw|echo|print|namespace|use|const|global|include|require|include_once|require_once|instanceof|as|list|array|fn|match)\>"
+color cyan "\\\$[A-Za-z_][A-Za-z0-9_]*"
+color brightcyan "\<(true|false|null|TRUE|FALSE|NULL)\>"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightcyan "^<\?php|^<\?=$"
+color brightblack "//[^\n]*|#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+linter php -l
+
+## ─── 5. javascript / typescript ──────────────────────────────────────────────
+syntax "javascript" "\.(m|c)?js$" "\.(jsx|ts|tsx)$"
+header "^#!.*node([[:space:]]|$)"
+color brightblue "\<(const|let|var|function|return|if|else|for|while|do|switch|case|default|break|continue|try|catch|finally|throw|class|extends|super|import|export|from|as|async|await|yield|new|this|null|undefined|true|false|typeof|instanceof|in|of|delete|void|static|get|set|implements|interface|type|enum|readonly|declare|namespace|public|private|protected|abstract)\>"
+color yellow "\<(console|window|document|process|require|module|exports|global|fetch|Promise|Math|JSON|Object|Array|String|Number|Boolean|Date|Error|Map|Set|Symbol)\."
+color brightcyan "\<(true|false|null|undefined|NaN|Infinity)\>"
+color brightgreen "\"[^\"]*\"|'[^']*'" "`[^`]*`"
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>|0[xX][[:xdigit:]]+"
+color brightcyan "^#![[:space:]]*/[^[:space:]]*"
+color brightblack "//[^\n]*"
+color brightblack "/\*" 
+color brightblack "\*/"
+color brightblack "^[[:space:]]*\*[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 6. ruby ─────────────────────────────────────────────────────────────────
+syntax "ruby" "\.rb$" "Rakefile$" "Gemfile$"
+header "^#!.*((env[[:space:]]+)?|/usr/bin/)ruby([[:space:]]|$)"
+color brightblue "\<(def|end|class|module|if|elsif|else|unless|while|until|for|in|do|begin|rescue|ensure|raise|return|yield|require|require_relative|include|extend|case|when|then|and|or|not|self|super|alias|attr_reader|attr_writer|attr_accessor|puts|print|p|lambda|proc)\>"
+color magenta "@[a-zA-Z_][a-zA-Z0-9_]*"
+color brightcyan "\<(true|false|nil)\>"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightcyan "^#![[:space:]]*/[^[:space:]]*"
+color brightblack "#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 7. C / C++ ──────────────────────────────────────────────────────────────
+syntax "c" "\.(c|h|cc|hh|cpp|cxx|hpp|hxx)$"
+color brightblue "\<(auto|break|case|const|continue|default|do|else|enum|extern|for|goto|if|register|restrict|return|sizeof|static|struct|switch|typedef|union|volatile|while|inline|class|public|private|protected|namespace|template|typename|new|delete|this|virtual|override|try|catch|throw|operator|explicit|friend|mutable|constexpr|nullptr|using)\>"
+color brightcyan "\<(bool|char|double|float|int|long|short|signed|unsigned|void|size_t|ssize_t|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|FILE|time_t|pid_t|va_list|true|false|NULL)\>"
+color yellow "\<(printf|scanf|fprintf|sprintf|snprintf|malloc|calloc|realloc|free|memcpy|memset|strlen|strcpy|strncpy|strcmp|strncmp|fopen|fclose|fread|fwrite|open|read|write|close|exit|abs|atoi|atol|exit)\>"
+color magenta "^[[:space:]]*#[[:space:]]*(include|define|undef|if|ifdef|ifndef|else|elif|endif|pragma|error|warning)[[:space:]]*\(?"
+color magenta "<[^@]+\.h>"
+color brightgreen "\<[0-9]+(\.[0-9]+)?[uUlLfF]?\>|0[xX][[:xdigit:]]+"
+color brightgreen "\"[^\"]*\"" "'([^\\]|\\[[:print:]])'"
+color brightblack "//[^\n]*"
+color brightblack "/\*"
+color brightblack "\*/"
+color brightblack "^[[:space:]]*\*[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 8. go ───────────────────────────────────────────────────────────────────
+syntax "go" "\.go$"
+color brightblue "\<(break|case|chan|const|continue|default|defer|else|fallthrough|for|func|go|goto|if|import|interface|map|package|range|return|select|struct|switch|type|var)\>"
+color brightcyan "\<(bool|byte|complex64|complex128|error|float32|float64|int|int8|int16|int32|int64|rune|string|uint|uint8|uint16|uint32|uint64|uintptr|true|false|nil)\>"
+color yellow "\<(fmt|os|io|net|http|time|strings|strconv|errors|context|json|sync)\."
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>|0[xX][[:xdigit:]]+"
+color brightgreen "\"[^\"]*\"|`[^`]*`"
+color brightblack "//[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 9. rust ─────────────────────────────────────────────────────────────────
+syntax "rust" "\.rs$"
+color brightblue "\<(as|async|await|break|const|continue|crate|dyn|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|box)\>"
+color brightcyan "\<(bool|char|f32|f64|i8|i16|i32|i64|isize|str|u8|u16|u32|u64|usize|String|Vec|Option|Result|Some|None|Ok|Err)\>"
+color magenta "@[a-zA-Z_][a-zA-Z0-9_]*"
+color brightgreen "\"[^\"]*\""
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>|0[xX][[:xdigit:]]+"
+color brightblack "//[^\n]*"
+color brightred "\<(TODO|FIXME|XXX|unwrap\(\))\>"
+
+## ─── 10. java ────────────────────────────────────────────────────────────────
+syntax "java" "\.java$"
+color brightblue "\<(abstract|assert|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|var|record|sealed|permits)\>"
+color brightcyan "\<(boolean|byte|char|double|float|int|long|short|void|true|false|null)\>"
+color brightgreen "\"[^\"]*\""
+color brightgreen "\<[0-9]+(\.[0-9]+)?[fFdDlL]?\>|0[xX][[:xdigit:]]+"
+color brightblack "//[^\n]*"
+color brightblack "/\*"
+color brightblack "\*/"
+color brightblack "^[[:space:]]*\*[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 11. powershell ──────────────────────────────────────────────────────────
+syntax "powershell" "\.(ps1|psm1|psd1)$"
+header "^#!.*pwsh([[:space:]]|$)"
+color brightblue "\<(if|else|elseif|switch|for|foreach|while|do|function|filter|return|break|continue|try|catch|finally|throw|param|begin|process|end|class|enum|using|module)\>"
+color cyan "\\\$[A-Za-z_][A-Za-z0-9_]*"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightblack "#[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 12. lua (scripts NSE de nmap incluidos) ─────────────────────────────────
+syntax "lua" "\.(lua|nse)$"
+header "^#!.*lua([[:space:]]|$)"
+color brightblue "\<(and|break|do|else|elseif|end|false|for|function|goto|if|in|local|nil|not|or|repeat|return|then|true|until|while)\>"
+color cyan "\<(string|table|math|io|os|coroutine|debug|pairs|ipairs|type|tonumber|tostring|require|print|select|pcall|error|setmetatable|getmetatable)\."
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>|0[xX][[:xdigit:]]+"
+color brightblack "--[^\n]*"
+color brightred "\<(TODO|FIXME|XXX)\>"
+
+## ─── 13. json ────────────────────────────────────────────────────────────────
+syntax "json" "\.(json|geojson|jsonc)$"
+color brightcyan "\"([^\"\\]|\\.)*\"[[:space:]]*:"
+color brightgreen "\"([^\"\\]|\\.)*\""
+color brightcyan "\<(true|false|null)\>"
+color brightgreen "\<-?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?\>"
+color red "//[^\n]*"
+linter jq .
+
+## ─── 14. yaml ────────────────────────────────────────────────────────────────
+syntax "yaml" "\.(ya?ml)$"
+color brightcyan "^[[:space:]]*[^[:space:]:#][^:#]*\:( |$)"
+color brightcyan "\<(true|false|null|yes|no|on|off)\>"
+color magenta "^[[:space:]]*-[[:space:]]"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>"
+color brightblack "^[[:space:]]*#[^\n]*"
+color brightcyan "\<https?://[^[:space:]]+"
+color brightred "\<(TODO|FIXME)\>"
+
+## ─── 15. toml ────────────────────────────────────────────────────────────────
+syntax "toml" "\.toml$"
+color brightcyan "^[[:space:]]*\[[^]]*\]"
+color brightcyan "\<(true|false)\>"
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+(\.[0-9]+)?\>"
+color brightblack "^[[:space:]]*#[^\n]*"
+
+## ─── 16. ini / cfg / conf / .env ─────────────────────────────────────────────
+syntax "ini" "\.(ini|cfg|conf|env)$" "^\.env$"
+color brightcyan "^[[:space:]]*\[[^]]*\]"
+color brightcyan "\\<(true|false|yes|no|on|off)\\>"
+color yellow "^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_.-]*[[:space:]]*="
+color brightgreen "\"[^\"]*\"|'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightblack ";[^\n]*|^[[:space:]]*#[^\n]*"
+
+## ─── 17. html ────────────────────────────────────────────────────────────────
+syntax "html" "\.x?html?$"
+color magenta "</?[a-zA-Z][a-zA-Z0-9_-]*( [^>]*)?>"
+color brightblue "\<(html|head|body|title|script|style|div|span|a|p|form|input|button|table|tr|td|th|ul|ol|li|img|meta|link|header|footer|nav|section|h[1-6])\>"
+color brightgreen "\"[^\"]*\""
+color brightblack "<!--"
+color brightblack "-->"
+color brightred "\<(TODO|FIXME)\>"
+
+## ─── 18. css ─────────────────────────────────────────────────────────────────
+syntax "css" "\.css$"
+color magenta "\.[a-zA-Z][a-zA-Z0-9_-]*|#[a-zA-Z][a-zA-Z0-9_-]*"
+color brightblue "\<(body|html|div|span|a|p|h[1-6]|ul|ol|li|table|tr|td|code|pre|form|input|button|header|footer|nav|section|class|id)\>"
+color brightcyan "\"[^\"]*\"|'[^']*'"
+color brightgreen "\#[[:xdigit:]]{3,8}\>"
+color brightgreen "\<[0-9]+(\.[0-9]+)?(px|em|rem|vh|vw|%|s|ms)?\>"
+color yellow "^[[:space:]]*[a-z-]+[[:space:]]*:"
+color brightblack "/\*"
+color brightblack "\*/"
+
+## ─── 19. xml / svg ───────────────────────────────────────────────────────────
+syntax "xml" "\.(xml|svg|plist|xsl|wsdl)$"
+color magenta "</?[a-zA-Z][a-zA-Z0-9_:]*( [^>]*)?>"
+color magenta "<\?xml.*\?>"
+color brightgreen "\"[^\"]*\""
+color brightblack "<!--"
+color brightblack "-->"
+
+## ─── 20. sql ─────────────────────────────────────────────────────────────────
+syntax "sql" "\.sql$"
+color brightblue "\<(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|OUTER|ON|AS|AND|OR|NOT|NULL|IS|IN|BETWEEN|LIKE|GROUP|BY|ORDER|HAVING|LIMIT|OFFSET|DISTINCT|CREATE|DROP|ALTER|TABLE|INDEX|VIEW|TRIGGER|PROCEDURE|DATABASE|GRANT|REVOKE|BEGIN|COMMIT|ROLLBACK|UNION|ALL|EXISTS|CASE|WHEN|THEN|ELSE|END|VALUES|SET|INTO)\>"
+color brightcyan "\<(COUNT|SUM|AVG|MIN|MAX|COALESCE|CAST|CONCAT|SUBSTR|NOW)\>"
+color brightgreen "'[^']*'"
+color brightgreen "\<[0-9]+\>"
+color brightblack "--[^\n]*"
+color brightred "\<(TODO|FIXME)\>"
+
+## ─── 21. markdown ────────────────────────────────────────────────────────────
+syntax "markdown" "\.(md|markdown)$"
+color brightwhite "^[[:space:]]*[$#][$#]*[[:space:]].*"
+color brightcyan "^>[[:space:]].*"
+color brightcyan "\*\*[^*]+\*\*|_[^_]+_|\*[^*]+\*"
+color brightgreen "\[[^]]+\]\([^)]+\)"
+color brightblack "\`\`\`[^\`]*\`\`\`"
+color brightblack "^---$|^\*\*\*+$|^___+$"
+
+## ─── 22. dockerfile ──────────────────────────────────────────────────────────
+syntax "dockerfile" "Dockerfile[a-zA-Z0-9_.-]*$" "\.dockerfile$"
+color brightblue "^[[:space:]]*(FROM|RUN|CMD|LABEL|MAINTAINER|EXPOSE|ENV|ADD|COPY|ENTRYPOINT|VOLUME|USER|WORKDIR|ARG|ONBUILD|STOPSIGNAL|HEALTHCHECK|SHELL)[[:space:]]"
+color brightcyan "^FROM[[:space:]].*|^ENTRYPOINT[[:space:]].*|^CMD[[:space:]].*"
+color brightcyan "\<(true|false)\>"
+color brightcyan "\<https?://[^[:space:]]+"
+color brightgreen "\"[^\"]*\""
+color brightblack "^[[:space:]]*#[^\n]*"
+color brightred "\<(TODO|FIXME)\>"
+
+## ─── 23. makefile ────────────────────────────────────────────────────────────
+syntax "makefile" "Makefile[a-zA-Z0-9_.-]*$" "\.mk$"
+color brightblue "^[[:space:]]*(include|export|unexport|ifeq|ifneq|ifdef|ifndef|else|endif|define|endef)[[:space:]]"
+color brightcyan "^[[:alnum:]_[.-]+[[:space:]]*:"
+color magenta "\$(\([a-zA-Z@?<^_%*+]|\{[a-zA-Z@?<^_%*+])"
+color magenta "\<(CC|CXX|LD|CFLAGS|CXXFLAGS|LDFLAGS|PREFIX|DESTDIR|TARGET|SHELL)\>"
+color brightgreen "\"[^\"]*\""
+color brightblack "^[[:space:]]*#[^\n]*"
+
+## ─── 24. systemd units ───────────────────────────────────────────────────────
+syntax "systemd" "\.(service|socket|timer|mount|path|target|device)$"
+color brightcyan "^\[[^]]+\]"
+color brightblue "^[[:space:]]*(Type|ExecStart|ExecStop|ExecStartPre|ExecStartPost|ExecReload|User|Group|Environment|EnvironmentFile|Restart|RestartSec|RemainAfterExit|WantedBy|RequiredBy|Wants|Requires|After|Before|Alias|OnUnitActiveSec|OnBootSec|OnCalendar|ListenStream|ListenPort|PathExists|ConditionPathExists|StandardOutput|StandardError)[[:space:]]*="
+color yellow "^[[:a-zA-Z0-9]]+="
+color brightgreen "\"[^\"]*\""
+color brightgreen "\<[0-9]+"
+color brightblack "^[[:space:]]*#[^\n]*|^[[:space:]]*;[^\n]*"
+
+## ─── 25. ssh config / sudoers / crontab ──────────────────────────────────────
+syntax "sshconf" "sshd_config$|ssh_config$|sshd_config.d/"
+color brightcyan "^[[:space:]]*[A-Z][A-Za-z]+[[:space:]]"
+color brightblue "^[[:space:]]*(Host|Match|Port|PermitRootLogin|PubkeyAuthentication|PasswordAuthentication|AuthorizedKeysFile|AddressFamily|GatewayPorts|AllowUsers|AllowGroups|DenyUsers|DenyGroups|PermitEmptyPasswords|X11Forwarding|LogLevel|AuthenticationMethods|PermitTunnel|ListenAddress)[[:space:]]"
+color brightgreen "yes|no"
+color brightblack "^[[:space:]]*#[^\n]*"
+syntax "sudoers" "sudoers$|sudoers.d/"
+color brightcyan "^[[:space:]]*(Defaults|[A-Za-z_%]+[[:space:]]+ALL[[:space:]]*=)"
+color brightblue "^[[:space:]]*(root|ALL|NOPASSWD|PASSWD|env_reset|secure_path|mail_badpass)[[:space:]]"
+color brightblack "^[[:space:]]*#[^\n]*"
+syntax "crontab" "crontab[[:alnum:]._-]*$"
+color brightcyan "^[[:alnum:]*/,-]+[[:space:]]+[[:alnum:]*/,-]+[[:space:]]+[[:alnum:]*/,-]+[[:space:]]+[[:alnum:]*/,-]+[[:space:]]+[[:alnum:]*/,-]+[[:space:]]"
+color brightblue "@(reboot|daily|weekly|monthly|yearly|hourly|midnight)\>"
+color brightblack "^[[:space:]]*#[^\n]*"
+
+## ─── 26. nginx / apache ──────────────────────────────────────────────────────
+syntax "nginx" "nginx(\.conf|\.d/|)[a-zA-Z0-9_.-]*$"
+color brightcyan "^[[:space:]]*[a-z_]+[[:space:]]*\{"
+color brightblue "^[[:space:]]*(server|location|listen|server_name|proxy_pass|proxy_set_header|root|index|include|access_log|error_log|rewrite|return|ssl_certificate|ssl_certificate_key|add_header|allow|deny|upstream|http)[[:space:]]"
+color brightgreen "\"[^\"]*\""
+color brightgreen "\<[0-9]+"
+color brightblack "^[[:space:]]*#[^\n]*"
+syntax "apache" "httpd\.conf$|apache2\.conf$|\.htaccess$"
+color brightblue "^[[:space:]]*(ServerRoot|Listen|LoadModule|DocumentRoot|<Directory|<VirtualHost|<IfModule|ServerName|AllowOverride|Require|Options|DirectoryIndex|RewriteEngine|RewriteRule|RewriteCond)[[:space:]]"
+color brightgreen "\"[^\"]*\""
+color brightblack "^[[:space:]]*#[^\n]*"
+
+## ─── 27. logs / hosts / datos crudos ─────────────────────────────────────────
+syntax "log" "\.log$|kern\.log$|\.err$|dmesg$"
+color brightgreen "([0-9]{4}-[0-9]{2}-[0-9]{2}|[[:alpha:]]{3}[[:space:]]+[0-9]+)[[:space:]][0-9:]{8}"
+color red "\<(ERROR|FATAL|FAIL|FAILED|SIGNATURE|CRIT)\>"
+color yellow "\<(WARN|WARNING|NOTICE)\>"
+color brightgreen "\<(INFO|DEBUG|OK)\>"
+color brightcyan "\<https?://[^[:space:]]+"
+color cyan "\<(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\>"
+syntax "hosts" "hosts$"
+color cyan "\<(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\>"
+color brightcyan "\<[[:xdigit:]]*:[[:xdigit:]:]+\>"
+color yellow "\<localhost\>"
+color brightblack "^[[:space:]]*#.*"
+
+## ─── 28. ensamblador (x86) ───────────────────────────────────────────────────
+syntax "asm" "\.(asm|s|S)$"
+color brightblue "\<(mov|movb|movw|movl|movq|lea|push|pop|add|sub|imul|mul|div|xor|and|or|not|cmp|test|jmp|je|jne|jg|jl|ja|jb|call|ret|leave|int|nop|inc|dec|shl|shr|sar|xchg|cdq|syscall)\>"
+color cyan "\<(rax|rbx|rcx|rdx|rsi|rdi|rsp|rbp|eip|rip|eax|ebx|ecx|edx|esi|edi|al|bl|cl|dl|xmm0|xmm1)\>"
+color brightcyan "^\.[a-zA-Z_][a-zA-Z0-9_]*:"
+color brightgreen "0[xX][[:xdigit:]]+|\$0x[[:xdigit:]]+|\$[0-9]+"
+color brightblack "^[[:space:]]*(;|#)[^\n]*"
+
+## ─── 29. diff / patch ────────────────────────────────────────────────────────
+syntax "diff" "\.(diff|patch)$"
+color brightblue "^@@.*"
+color brightgreen "^\+.*"
+color brightred "^-.*"
+color brightwhite "^Index: .*|^diff .*"
+
+## ─── 30. git commit ──────────────────────────────────────────────────────────
+syntax "gitcommit" "COMMIT_EDITMSG$|MERGE_MSG$|TAG_EDITMSG$"
+color brightgreen "\"[^\"]*\""
+color brightblack "^#.*"
+
+## ─── 31. awk ─────────────────────────────────────────────────────────────────
+syntax "awk" "\.awk$"
+header "^#!.*(env[[:space:]]+)?g?awk([[:space:]]|$)"
+color brightblue "\<(BEGIN|END|if|else|while|for|do|break|continue|next|nextfile|exit|function|return|delete|in)\>"
+color yellow "\<(print|printf|getline|close|system|length|substr|index|split|match|sub|gsub|sprintf)\>"
+color cyan "\\\$[0-9N]+"
+color brightgreen "\"[^\"]*\""
+color brightgreen "\<[0-9]+\>"
+color brightblack "#[^\n]*"
+
+## ─── 32. nanorc (auto-resaltado de esta config) ──────────────────────────────
+syntax "nanorc" "\.nanorc$|nanorc$"
+color brightcyan "^[[:space:]]*(set|unset|syntax|header|magic|comment|linter|bind|unbind|include|extend)"
+color yellow "\<(gray|grey|brightwhite|normal)\>"
+color brightblack "^[[:space:]]*#.*"
+
+## ─── 33. texto plano genérico: URLs/IPs/hashes para CTF ──────────────────────
+syntax "ctftxt" "\.txt$" "flag.*" "notes.*" "loot.*"
+color brightcyan "\<https?://[^[:space:]]+"
+color cyan "\<(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\>"
+color yellow "\<[0-9a-fA-F]{32}\>|\<[0-9a-fA-F]{40}\>|\<[0-9a-fA-F]{64}\>"
+color magenta "\<(flag|FLAG|HTB|THM)\{[^}]*\}"
+color brightred "\<(TODO|FIXME|XXX)\>"

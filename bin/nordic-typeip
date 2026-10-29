@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# nordic-typeip — auto-escribe una IP donde esté el cursor (ventana enfocada)
+#   F1 → nordic-typeip local    (IP de la VPN si hay; si no, la de la red local)
+#   F2 → nordic-typeip target   (IP de la máquina víctima fijada con settarget)
+# Inyección con xdotool sobre la ventana con foco (sin robar foco).
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+notify_err() { notify-send -u normal -a "kali-nordic" -t 2500 "$1" "$2" 2>/dev/null; }
+
+ip_vpn() {
+    local dev ip
+    dev="$(ip -o link 2>/dev/null | awk -F': ' '{print $2}' | grep -Eo '^(tun|wg|tailscale|ppp)[a-zA-Z0-9]*' | head -1)"
+    [ -n "$dev" ] || return 1
+    ip="$(ip -4 -o addr show dev "$dev" 2>/dev/null | awk 'NR==1{print $4}' | cut -d/ -f1)"
+    [ -n "$ip" ] || ip="$(ip -6 -o addr show dev "$dev" 2>/dev/null | awk 'NR==1{print $4}' | cut -d/ -f1)"
+    [ -n "$ip" ] || return 1
+    printf '%s\n' "$ip"
+}
+
+ip_local() {
+    local f v
+    for f in eth0 ens33 $(ls /sys/class/net 2>/dev/null | grep -E '^(en|eth)'); do
+        v="$(ip -4 -o addr show dev "$f" 2>/dev/null | awk 'NR==1{print $4}' | cut -d/ -f1)"
+        [ -n "$v" ] && { printf '%s\n' "$v"; return 0; }
+    done
+    return 1
+}
+
+ip_target() {
+    local sf
+    if [ "$(id -u)" -eq 0 ] && [ -s /run/nordic/target ]; then sf=/run/nordic/target
+    else sf="$HOME/.cache/nordic/target"
+    fi
+    [ -s "$sf" ] || return 1
+    read -r line < "$sf" 2>/dev/null
+    local ip="${line%%|*}"
+    [ -n "$ip" ] && { printf '%s\n' "$ip"; return 0; }
+    return 1
+}
+
+case "${1:-local}" in
+    print)
+        # sólo imprime la IP (para widgets zsh/zle: van al buffer del cursor)
+        case "${2:-local}" in
+            local)  IP="$(ip_vpn)" || IP="$(ip_local)" || { notify_err "  sin IP" "No hay IP local ni VPN activa"; exit 1; } ;;
+            target) IP="$(ip_target)"  || { notify_err "  No Target" "fija uno con: settarget <IP> (o Super+T)"; exit 1; } ;;
+        esac
+        printf '%s' "$IP"
+        exit 0
+        ;;
+    local)
+        IP="$(ip_vpn)" || IP="$(ip_local)" || { notify_err "  sin IP" "No hay IP local ni VPN activa"; exit 1; }
+        ;;
+    target)
+        IP="$(ip_target)" || { notify_err "  No Target" "fija uno con: settarget <IP> (o Super+T)"; exit 1; }
+        ;;
+    *)
+        notify_err "nordic-typeip" "uso: nordic-typeip [local|target]"
+        exit 1
+        ;;
+esac
+
+# La IP va EXACTAMENTE donde esté el cursor. En kitty (F1/F2 capturados por
+# kitty.conf) usamos kitty @ send-text sobre ESTA ventana (el pariente del
+# script): es lo más fiable, sin XTEST ni protocolos crudos. Fuera de kitty
+# (otras apps) caemos a xdotool type sobre la ventana con foco.
+if [ -n "${KITTY_WINDOW_ID:-}" ] && command -v kitty >/dev/null 2>&1; then
+    kitty @ send-text --match id:"$KITTY_WINDOW_ID" -- "$IP" 2>/dev/null \
+      || kitty @ send-text -- "$IP" 2>/dev/null \
+      || { sleep 0.25; xdotool type --clearmodifiers -- "$IP"; }
+    exit 0
+fi
+sleep 0.25   # deja caer la tecla física ya liberada antes de inyectar
+xdotool type --clearmodifiers -- "$IP"
+exit 0

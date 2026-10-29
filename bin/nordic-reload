@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# nordic-reload — recarga bspwm/sxhkd/polybar/picom sin cerrar ventanas
+set -u
+P="$HOME/.local/bin:$HOME/.config/polybar/scripts"
+export PATH="$P:/usr/local/bin:$PATH"
+
+case "${1:-}" in
+  sxhkd) sxhkd -c "$HOME/.config/sxhkd/sxhkdrc" 2>&1 |tee /tmp/.nordic-re.err & pkill sxhkd 2>/dev/null ;;
+esac
+
+# Recargar configuraciones sin perder la sesión ni las ventanas
+bspc wm -R "$HOME/.config/bspwm/bspwmrc" 2>/dev/null
+
+pkill sxhkd 2>/dev/null
+sleep 0.1
+sxhkd -c "$HOME/.config/sxhkd/sxhkdrc" >/dev/null 2>&1 &
+
+"$HOME/.config/polybar/launch.sh" >/dev/null 2>&1 &
+picom_pid=$(pgrep -f 'picom .*picom.conf' | head -1)
+if [ -n "$picom_pid" ]; then
+    kill "$picom_pid" 2>/dev/null
+    sleep 0.2
+fi
+picom --config "$HOME/.config/picom/picom.conf" >/dev/null 2>&1 &
+
+notify-send -u low -a "kali-nordic" -t 1500 "  Recargado" "bspwm · sxhkd · polybar · picom" 2>/dev/null

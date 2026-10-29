@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# nano-check — muestra qué sintaxis de nano detectaría el fichero y por qué vía
+set -u
+f="${1:-}"
+[ -n "$f" ] && [ -f "$f" ] || { echo "uso: nano-check <fichero>"; exit 1; }
+
+nordic_dir="${NORDIC_NANO_DIR:-/usr/share/nordic}"
+
+# 1) por extensión (con nano lo decide por 'syntax "sintaxis" "<regex>"' del nombre)
+ext="${f##*.}"
+shebang=$(head -n 1 "$f" 2>/dev/null)
+
+path_via() { echo "$1"; }
+found=""; why=""
+
+# buscar en las sintaxis definidas de nordic + /usr/share/nano
+parse_syntax() {
+    # matchear extensión exacta: ."$ext"
+    grep -rl -- "$2" "$1" 2>/dev/null | head -1
+}
+if [ "$ext" != "$f" ]; then
+    hit=$(find "$nordic_dir" /usr/share/nano -name '*.nanorc' -exec grep -l "\.${ext}\$\|\[${ext}\]" {} \; 2>/dev/null | head -1)
+    if [ -n "$hit" ]; then
+        syn=$(awk -v fs="$hit" 'BEGIN{}' "$hit")
+        syn=$(grep -m1 "^syntax" "$hit" | awk '{print $2}')
+        found="$syn"; why="extensión .${ext} (por $hit)"
+    fi
+fi
+if [ -z "$found" ] && echo "$shebang" | grep -q '^#!'; then
+    hit=$(find "$nordic_dir" /usr/share/nano -name '*.nanorc' -exec grep -l '^header "\^#!' {} \; 2>/dev/null | head -1)
+    if [ -n "$hit" ]; then
+        # mejor match por name basado en el shebang
+        for h in bash zsh sh python perl php ruby node lua; do
+            if echo "$shebang" | grep -q "$h"; then
+                hit=$(grep -rl "syntax \"$h" "$nordic_dir" /usr/share/nano 2>/dev/null | head -1)
+                [ -n "$hit" ] && { found="$h"; why="shebang en la 1ª línea"; break; }
+            fi
+        done
+    fi
+fi
+
+echo
+echo "   nano-check : $f"
+echo "   ───────────────────"
+if [ -n "$found" ]; then
+    echo "   sintaxis  : $found"
+    echo "   vía       : $why"
+else
+    echo "   sintaxis  : (sin color — tratará como texto plano/nanorc genérico)"
+    echo "   vía       : ninguna (sin extensión conocida ni shebang)"
+fi
+echo

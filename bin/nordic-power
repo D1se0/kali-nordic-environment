@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# nordic-power — menú de energía (rofi glass) con confirmación para acciones
+# destructivas. NORDIC_DRYRUN=1 → solo registra el comando en power.log (nunca
+# apaga/reinicia real), pensado para pruebas automatizadas.
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+CACHE="$HOME/.cache/nordic"; mkdir -p "$CACHE"
+
+can_suspend()   { [ -e /sys/power/state ] && grep -qE '\bmem\b' /sys/power/state 2>/dev/null; }
+can_hibernate() { [ -e /sys/power/state ] && grep -qE '\bdisk\b' /sys/power/state 2>/dev/null; }
+
+menu_entries() {
+    printf ' Apagar\n'
+    printf ' Reiniciar\n'
+    if can_suspend; then printf ' Suspender\n'; else printf ' Suspender (no disponible)\n'; fi
+    printf ' Bloquear\n'
+    printf ' Cerrar sesión\n'
+    if can_hibernate; then printf ' Hibernar\n'; fi
+}
+
+log_run() {
+    printf '[nordic-power] %s %s\n' "$(date +%T)" "$*" >> "$CACHE/power.log"
+}
+
+
+
+do_action() {
+    log_run "$*"
+    if [ "${NORDIC_DRYRUN:-0}" = "1" ]; then
+        notify-send -u normal -a "kali-nordic" -t 2000 " [dry-run]" "ejecutaría: $*" 2>/dev/null
+        return 0
+    fi
+    case "$1" in
+        poweroff)  systemctl poweroff ;;
+        reboot)    systemctl reboot ;;
+        suspend)   systemctl suspend ;;
+        hibernate) systemctl hibernate ;;
+        lock)      nordic-lock ;;
+        logout)    bspc quit ;;
+    esac
+}
+
+ACT_FILE="${XDG_RUNTIME_DIR:-/tmp}/nordic-power-action"
+
+# serie de modos: el script rofi 2.0 no dibuja bien los window en dmenu cuando hay
+# entradas, así que el nuevo módulo "power" es un modi script power sesión drun.
+open_menu() {
+    rm -f "$ACT_FILE"
+    nordic-rofi power -- -modi "power:$HOME/.config/rofi/modi/power-modi.sh" -show power >/dev/null 2>&1 || true
+    local act=""
+    [ -r "$ACT_FILE" ] && read -r act < "$ACT_FILE"
+    rm -f "$ACT_FILE"
+    [ -n "$act" ] || exit 0   # Esc / cerrado sin elección
+    case "$act" in
+        poweroff)  nordic-confirm generic " Apagar el sistema" && do_action poweroff ;;
+        reboot)    nordic-confirm generic " Reiniciar el sistema" && do_action reboot ;;
+        suspend)   do_action suspend ;;
+        hibernate) nordic-confirm generic " Hibernar el sistema" && do_action hibernate ;;
+        lock)      do_action lock ;;
+        logout)    nordic-confirm generic " Cerrar la sesión" && do_action logout ;;
+    esac
+}
+
+case "${1:-menu}" in
+    menu)    open_menu ;;
+    entries) printf '%s\n' "$(menu_entries)" | grep -v '(' ;;
+    action)  shift; do_action "$@" ;;
+    validate)
+        # valida que las entradas existen (para unit tests)
+        menu_entries | grep -q 'Apagar' && echo ok ;;
+    ask|*)   open_menu ;;
+esac

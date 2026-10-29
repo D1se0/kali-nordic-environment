@@ -1,0 +1,90 @@
+// confirm.rasi — Yes / No centered glass popup (Nord glass)
+* {
+    background:     #1E222A;
+    background-alt: #2E3440;
+    foreground:     #D8DEE9;
+    selected:       #3B4252;
+    accent:         #88C0D0;
+    muted:          #6B7889;
+    crit:           #BF616A;
+
+    font: "JetBrainsMono Nerd Font 10";
+    text-color: @foreground;
+    padding: 0px;
+    border: 0px;
+    border-radius: 10px;
+    margin: 0px;
+}
+
+textbox, entry, prompt, element-text {
+    font: @font;
+}
+
+window {
+    location: center;
+    width: 460px;
+    padding: 16px;
+    background-color: @background;
+    border: 1px;
+    border-color: rgba (136, 192, 208, 0.35);
+    border-radius: 10px;
+}
+
+inputbar {
+    background-color: transparent;
+    border: 0px;
+    margin: 0 0 8px 0;
+    padding: 6px 4px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent;
+    font: "JetBrainsMono Nerd Font Bold 10";
+}
+
+entry {
+    placeholder: "";
+    text-color: @accent;
+    background-color: transparent;
+    border: 0px;
+}
+
+listview {
+    lines: 2;
+    spacing: 4px;
+    padding: 4px 0;
+    background-color: transparent;
+    border: 0px;
+    scrollbar: false;
+}
+
+message {
+    background-color: transparent;
+    border: 0px;
+    padding: 8px 4px;
+    text-color: @accent;
+}
+
+textbox {
+    text-color: @accent;
+}
+
+element {
+    horizontal-align: 0.5;
+    text-color: @foreground;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 0px;
+    background-color: transparent;
+}
+element normal normal, element alternate normal {
+    background-color: transparent;
+    text-color: @foreground;
+    border: 0px;
+}
+element selected normal {
+    background-color: @selected;
+    text-color: #ECEFF4;
+    border: 0px;
+}

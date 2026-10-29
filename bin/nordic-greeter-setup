@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# nordic-greeter-setup — lo ejecuta lightdm (root, sin argumentos) antes del greeter
+set -u
+# teclado español en la pantalla de login
+setxkbmap es 2>/dev/null
+# fondo propio del greeter (ligero, igual que el escritorio)
+WP="$HOME/.cache/nordic/nordic-01.png"
+[ -f "$WP" ] || WP="/usr/share/backgrounds/nordic/nordic-01.png"
+command -v feh >/dev/null 2>&1 && [ -f "$WP" ] && setsid feh --no-fehbg --bg-fill "$WP" >/dev/null 2>&1 &
+exit 0

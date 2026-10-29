@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# nordic-scratchpad — terminal desplegable tipo drop-down con un desktop dedicado
+set -u
+DESK="scratch"
+
+# crear el desktop si no existe (en el monitor primario)
+bspc query -D --names 2>/dev/null | grep -qx "$DESK" || bspc monitor -a "$DESK"
+
+# ¿está enfocado el scratchpad? → volver al escritorio anterior (toggle off)
+if bspc query -D -d focused --names 2>/dev/null | grep -qx "$DESK"; then
+    last=$(cat "$HOME/.cache/nordic/scratch-last" 2>/dev/null | head -1)
+    if [ -n "$last" ] && [ "$last" != "$DESK" ]; then
+        bspc desktop -f "${last}" 2>/dev/null
+    fi
+    exit 0
+fi
+# guardar desde dónde venimos y alternar
+bspc query -D -d focused --names 2>/dev/null | head -1 > "$HOME/.cache/nordic/scratch-last"
+bspc desktop "$DESK" -f
+
+# ¿hay ya una kitty scratchpad?
+has=$(bspc query -N -d "$DESK" 2>/dev/null | wc -l)
+if [ "$has" -eq 0 ]; then
+    kitty --class="scratchpad" --title="nordic-scratchpad" >/dev/null 2>&1 &
+fi

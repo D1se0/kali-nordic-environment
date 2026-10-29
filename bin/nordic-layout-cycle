@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# nordic-layout-cycle — cicla presets del árbol: tiling (0.52) → spiral → monocle
+set -u
+STATE_FILE="$HOME/.cache/nordic/layout-cycle"
+mkdir -p "$(dirname "$STATE_FILE")"
+read -r i < "$STATE_FILE" 2>/dev/null || i=0
+i=$(( (i + 1) % 3 ))
+echo "$i" > "$STATE_FILE"
+case "$i" in
+    0)  bspc desktop focused -l long   2>/dev/null ; bspc config split_ratio 0.52 ;;
+    1)  bspc desktop focused -l spiral 2>/dev/null ; bspc config split_ratio 0.55 ;;
+    2)  bspc desktop focused -l next   2>/dev/null ;;  # monocle ⇄ tiling
+esac
+notify-send -u low -t 1200 -a "kali-nordic" "   layout: $(bspc query -T -d focused 2>/dev/null | jq -r '.layout // "?"' 2>/dev/null)" 2>/dev/null
+echo "layout → $i"

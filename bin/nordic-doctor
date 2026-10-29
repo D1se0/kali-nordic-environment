@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# nordic-doctor — diagnóstico rápido del entorno (✔/✘ y cómo arreglar)
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+OK=0 ; FA=0
+line() { printf '   %s  %s\n' "$1" "$2"; }
+ok()   { line "✔" "$1"; OK=$((OK+1)); }
+fall() { line "✘" "$1${2:+  ← $2}"; FA=$((FA+1)); }
+
+check_bin() {
+    command -v "$1" >/dev/null 2>&1 || { "$FIX" >/dev/null 2>&1 || :; }
+    if command -v "$1" >/dev/null 2>&1; then ok "binario $1"; else fall "binario $1" "instalar con apt install ${2:-$1}"; fi
+}
+
+check_proc() {
+    if pgrep -x "$1" >/dev/null 2>&1 || pgrep -f "$1" >/dev/null 2>&1; then
+        ok "proceso $1 corriendo"
+    else
+        fall "proceso $1" "reinicia la sesión (o Super+Shift+R)"
+    fi
+}
+
+post="${1:-}"
+FIX=""
+[ "$post" != "--post-install" ] || post=""
+
+# ── protegidos ────────────────────────────────────────────────────────────────
+if [ ! -p /dev/stdin ] && [ -t 0 ]; then HIDE=0; fi
+
+# sesión X
+if [ -n "${DISPLAY:-}" ]; then
+    ok "sesión X DISPLAY=$DISPLAY"
+else
+    fall "sesión X" "sin DISPLAY — no estás en la sesión gráfica"
+fi
+
+# procesos
+command -v bspwm >/dev/null 2>&1 && check_proc bspwm
+command -v sxhkd  >/dev/null 2>&1 && check_proc sxhkd
+command -v polybar >/dev/null 2>&1 && check_proc polybar
+command -v picom  >/dev/null 2>&1 && check_proc picom
+command -v dunst  >/dev/null 2>&1 && check_proc dunst
+
+# renderizador
+if command -v glxinfo >/dev/null 2>&1; then
+    rend="$(DISPLAY="${DISPLAY:-:0}" glxinfo -B 2>/dev/null | awk '/Accelerated:/{print $2}')"
+    if [ "$rend" = "yes" ]; then
+        ok "renderizador acelerado → perfil glass apto"
+    else
+        fall "renderizador llvmpipe (software)" "perfil lite; habilita aceleración 3D en VMware (memoria vídeo ≥ 256 MB) para glass"
+    fi
+else
+    fall "glxinfo no instalado" "apt install mesa-utils"
+fi
+
+# perfil activo
+prof="$(cat "$HOME/.cache/nordic/profile" 2>/dev/null || echo lite)"
+ok "perfil picom: $prof"
+
+# temas GTK/QT/iconos/cursor
+# /etc/environment es entorno real, no lo resolvemos como input de shellcheck
+gt=""
+if gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | grep -qi nord; then
+    ok "tema GTK Nord activo"
+else
+    fall "tema GTK Nord" "el tema Nordic-darker no está corriendo en gsettings"
+fi
+if gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | grep -qi papirus; then
+    ok "iconos Papirus activos"
+else
+    fall "iconos Papirus" "gsettings set org.gnome.desktop.interface icon-theme Papirus"
+fi
+
+# VMware tools
+if systemctl is-active vmtoolsd >/dev/null 2>&1; then ok "vmtoolsd systemd activo"; else fall "vmtoolsd" "systemctl start vmtoolsd"; fi
+if pgrep -f 'vmtoolsd -n vmusr' >/dev/null 2>&1; then ok "vmtoolsd usuario (portapapeles/redimensionado)"; else fall "vmtoolsd -n vmusr" "ejecuta mango vmtoolsd -n vmusr o añade a autostart"; fi
+
+# sxhkd atajos
+if [ -f "$HOME/.config/sxhkd/sxhkdrc" ]; then
+    ok "sxhkdrc presente"
+else
+    fall "sxhkdrc" "falta ~/.config/sxhkd/sxhkdrc"
+fi
+
+# módulos barra
+for m in cpu ram vpn ip-script target disk; do
+    script="$HOME/.config/polybar/scripts/$m.sh"
+    if [ -x "$script" ] || [ -f "$script" ]; then ok "módulo barra: $m"; else fall "módulo barra: $m" "falta $script"; fi
+done
+
+# settarget
+if command -v settarget >/dev/null 2>&1; then
+    out=$(settarget -s 2>&1 | head -1)
+    ok "settarget instalado → $out"
+else
+    fall "settarget no instalado" "instalarlo en /usr/local/bin"
+fi
+
+# VPN
+if [ -n "$(ip -o link 2>/dev/null | awk -F': ' '{print $2}' | grep -E '^(tun|wg|tailscale|ppp)' | head -1)" ]; then
+    ok "VPN activa"
+else
+    line "%" "VPN off"
+fi
+
+# teclado (solo con DISPLAY activo)
+if [ -n "${DISPLAY:-}" ]; then
+    kb=$(DISPLAY="$DISPLAY" setxkbmap -query 2>/dev/null | awk '/layout/{print $2}')
+    if [ "$kb" = "es" ]; then ok "teclado: es"; else fall "teclado: ${kb:-?}" "setxkbmap es (aparece tras reinicio en todos los puntos)"; fi
+else
+    line "?" "teclado: verificar (requiere sesión X)"
+fi
+
+# nano
+if [ -d /usr/share/nano ] && grep -q nordic /etc/nanorc 2>/dev/null; then
+    ok "nano con sistema de temas nordic"
+else
+    fall "nano nordic" "compila /etc/nanorc → ausencia de sintaxis extendida"
+fi
+
+# fuentes
+if fc-list 2>/dev/null | grep -qi 'JetBrainsMono Nerd'; then
+    ok "fuente JetBrainsMono Nerd instalada"
+else
+    fall "fuente JetBrainsMono Nerd" "instalar de repo kali-nordic/assets"
+fi
+
+echo
+printf '   resumen: %d ✔ · %d ✘\n' "$OK" "$FA"
+[ "$FA" = "0" ] || printf '   FIX con: apt install <paquete>  ·  gsettings …  · Super+Shift+R\n'
+exit 0

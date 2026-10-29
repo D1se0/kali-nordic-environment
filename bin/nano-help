@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# nano-help — ayuda de atajos nano estilo VS Code
+cat <<'EOF'
+   nano — atajos estilo VS Code kali-nordic
+   ─────────────────────────────────────────────────────
+   Ctrl+S   guardar            Ctrl+Z/⌃   deshacer     Alt+↑/↓  mover línea
+   Ctrl+Q   salir             hält Ctrl+Y   rehacer      Ctrl+G   ir a línea
+   Ctrl+F   buscar             Ctrl+/     comentar     Ctrl+D   duplicar línea
+   Ctrl+H   reemplazar         Alt+A      marcar       Ctrl+T   linter (según sintaxis)
+   Ctrl+C   posición           Alt+↑/↓    mover línea          (shell→shellcheck,
+   Ctrl+X   cortar                                                     python→py_compile…)
+   Ctrl+V   pegar              ataques nativos intactos: Ctrl+O guardar, Ctrl+W buscar…
+   ─────────────────────────────────────────────────────
+   hint: usa `nano-check <fichero>` para ver qué sintaxis detectará.
+EOF

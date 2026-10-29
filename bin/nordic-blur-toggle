@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# nordic-blur-toggle — alterna perfil glass (blur ON) / lite (blur OFF)
+set -u
+CONF="$HOME/.config/picom/picom.conf"
+STATE="$HOME/.cache/nordic/profile"
+mkdir -p "$(dirname "$STATE")"
+
+current=$(cat "$STATE" 2>/dev/null || echo lite)
+if   [ "$current" = "glass" ]; then new=lite; else new=glass; fi
+echo "$new" > "$STATE"
+
+# blur ON / OFF editando el método y la opacidad mínima (lite = opacidad sin blur)
+if [ "$new" = "glass" ]; then
+    sed -i -e 's|^blur: method = .*|blur: method = "dual_kawase";|' "$CONF"
+else
+    sed -i -e 's|^blur: method = .*|blur: method = "none";|' "$CONF"
+fi
+
+# reiniciar picom con la nueva config
+pgrep -x picom | while read -r pid; do kill "$pid" 2>/dev/null; done
+sleep 0.2
+nohup picom --config "$CONF" >/dev/null 2>&1 &
+
+notify-send -u low -t 1500 -a "kali-nordic" "  Perfil: $new" \
+    "$([ "$new" = glass ] && echo 'Blur dual-kawase ON' || echo 'Sin blur (opacidad simple)')" 2>/dev/null
+echo "[nordic-blur-toggle] perfil → $new"

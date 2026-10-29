@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# nordic-clipboard — pequeño daemon de historial de portapapeles (substituto de
+# greenclip, no empaquetado en Kali rolling) para X11, ~0 % CPU en reposo.
+set -u
+H="$HOME/.cache/nordic/clipboard-history"
+mkdir -p "$(dirname "$H")"
+last=""
+while true; do
+    cur=$(xclip -selection clipboard -o 2>/dev/null | head -c 4096)
+    if [ -n "$cur" ] && [ "$cur" != "$last" ]; then
+        last="$cur"
+        # dedup y máx 200 entradas
+        grep -vF -- "$cur" "$H" 2>/dev/null | tail -199 > "$H.tmp"
+        printf '%s\n' "$cur" >> "$H.tmp"
+        mv -f "$H.tmp" "$H"
+    fi
+    sleep 1
+done

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# nordic-perf — utilidad de rendimiento: reporte + ajuste automático de perfil
+set -u
+CACHE="$HOME/.cache/nordic"
+
+report() {
+    local cpu mem desk
+    cpu=$(awk 'NR==1{tot=0;for(i=2;i<=NF;i++)a[i]=$i}END{for(i=2;i<=8;i++)tot+=a[i];printf "%.1f%%", tot}' /proc/stat 2>/dev/null || echo '?')
+    mem=$(free -m | awk 'NR==2{mps=$3; printf "%d MB usados de %d MB (%d%%)", mps, $2, mps*100/$2}')
+    desk=$(ps -eo comm | grep -E '^(bspwm|sxhkd|polybar|picom|dunst|kitty|rofi|feh)$' | wc -l)
+    echo
+    echo "   rendimiento kali-nordic"
+    echo "   ───────────────────────"
+    echo "   CPU total          : $cpu"
+    echo "   RAM                : $mem"
+    echo "   procesos escritorio: $desk"
+    local rend prof
+    rend=$(DISPLAY=:0 glxinfo 2>/dev/null | awk -v RS='' '/renderer|Accelerated/' | head -2 || true)
+    rend=$(grep -m1 '^    Accelerated' <(DISPLAY=:0 glxinfo -B 2>/dev/null) | awk '{print $2}')
+    prof=$(cat "$CACHE/profile" 2>/dev/null || echo lite)
+    echo "   renderizador       : $([ "${rend:-no}" = no ] && echo 'llvmpipe (software) — perfil lite recomendado' || echo "con aceleración ($rend) — perfil glass apto")"
+    echo "   perfil activo      : $prof"
+    echo
+}
+
+auto_mode() {
+    # cambia a lite si CPU media sostenida > 25 % durante 4muestras
+    local sum=0 i c
+    for i in 1 2 3 4; do
+        read -r _ u1 n1 s1 i1 _ < /proc/stat; sleep 3
+        read -r _ u2 n2 s2 i2 _ < /proc/stat
+        used=$(( (u2+n2+s2)-(u1+n1+s1) )); idle=$(( i2-i1 ))
+        [ $(( used + idle )) -gt 0 ] || continue
+        c=$(( used * 100 / (used + idle) ))
+        sum=$(( sum + c ))
+    done
+    if [ "$(( sum / 4 ))" -gt 25 ]; then
+        NORDIC_FORCE=lite nordic-blur-toggle 2>/dev/null
+        echo "nordic-perf: carga alta sostenida → perfil lite"
+    fi
+}
+
+case "${1:-report}" in
+    report|s) report ;;
+    auto)     auto_mode ;;
+    *)        report; echo "uso: nordic-perf [report|auto]" ;;
+esac

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# nordic-confirm — diálogo de confirmación Yes/No (rofi glass, No por defecto)
+# Uso: nordic-confirm close [id]        → confirmar cierre de ventana enfocada (o id)
+#      nordic-confirm generic "texto"   → pregunta genérica; exit 0 si Yes
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+MODI="$HOME/.config/rofi/modi/confirm-modi.sh"
+ANS_FILE="${XDG_RUNTIME_DIR:-/tmp}/nordic-confirm-answer"
+
+ask() {
+    rm -f "$ANS_FILE"
+    NORDIC_CONFIRM_TEXT="$1" nordic-rofi confirm -- -modi "confirm:$MODI" -show confirm -no-custom >/dev/null 2>&1 || true
+    local ans=""
+    [ -r "$ANS_FILE" ] && read -r ans < "$ANS_FILE"
+    rm -f "$ANS_FILE"
+    [ "$ans" = "yes" ]
+}
+
+case "${1:-generic}" in
+    close)
+        nid="${2:-focused}"
+        [ "$nid" = "focused" ] && nid="$(bspc query -N -n 2>/dev/null)"
+        [ -n "$nid" ] || exit 0
+        # título/clase para el texto
+        info=$(bspc query -T -N "$nid" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('title','?')[:38] + '  ·  ' + d.get('className','?'))" 2>/dev/null || echo "ventana")
+        if ask "¿Cerrar '$info'?"; then
+            bspc node "$nid" -c 2>/dev/null
+        else
+            exit 9   # No / Esc
+        fi
+        ;;
+    generic)
+        texto="${2:-¿Continuar?}"
+        if ask "$texto"; then
+            exit 0
+        else
+            exit 9
+        fi
+        ;;
+    *) exit 2 ;;
+esac

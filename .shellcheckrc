@@ -1,0 +1,16 @@
+# .shellcheckrc — kali-nordic
+# Suprimimos avisos de ESTILO/INFO explícitos y documentados (no ocultan errores):
+# SC2034 var unused-by-design (temas/colores compartidos), SC2009 ps top récord,
+# SC2126 grep|wc -l legibilidad, SC2016 comillas intencionadas en shaders magick,
+# SC2012 ls alternado por find cuando no importa el orden, SC2329 helpers
+# condicionales por plataforma, SC2005 echo $() legibilidad de píldoras polybar,
+# SC1009 estilo case multilínea.
+disable=SC2034
+disable=SC2009
+disable=SC2126
+disable=SC2016
+disable=SC2012
+disable=SC2329
+disable=SC2005
+disable=SC1009
+disable=SC2317
